@@ -13,6 +13,8 @@ public interface TransferService {
 
     DomainResult rejectTransfer(RejectTransferCommand command);
 
+    DomainResult markFundsReservation(MarkFundsReservationCommand command);
+
     @Getter
     @Builder
     class InitiateTransferCommand {
@@ -34,5 +36,12 @@ public interface TransferService {
     @Builder
     class CompleteTransferCommand {
         private UUID transferId;
+    }
+
+    @Getter
+    @Builder
+    class MarkFundsReservationCommand {
+        private UUID transferId;
+        private String reservationId;
     }
 }

@@ -4,8 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wordpress.kkaravitis.banking.transfer.domain.TransactionalOutbox;
 import com.wordpress.kkaravitis.banking.transfer.domain.TransactionalOutbox.TransactionalOutboxContext;
-import com.wordpress.kkaravitis.banking.transfer.domain.saga.SagaStepHandler.SagaParticipantCommand;
-import com.wordpress.kkaravitis.banking.transfer.domain.saga.SagaStepHandler.SagaStepResult;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,7 +33,7 @@ public abstract class SagaOrchestrator<T extends Enum<T>, S extends SagaStepHand
               .filter(handler -> sagaData.getStatus()
                     .equals(handler.currentSagaStatus()))
               .findFirst()
-              .map(handler -> handler.handle(event, sagaData));
+              .flatMap(handler -> handler.handle(event, sagaData));
 
         if (optionalSagaStepResult.isEmpty()) {
             return;
@@ -49,11 +47,12 @@ public abstract class SagaOrchestrator<T extends Enum<T>, S extends SagaStepHand
         sagaEntity.setSagaDataJson(objectMapper.writeValueAsString(updatedSagaData));
         sagaRepository.save(sagaEntity);
 
-        SagaParticipantCommand sagaParticipantCommand = sagaStepResult.getSagaParticipantCommand();
-        if (sagaParticipantCommand == null) {
+        Optional<SagaParticipantCommand> optionalCommand = sagaStepResult.getSagaParticipantCommand();
+        if (optionalCommand.isEmpty()) {
             return;
         }
 
+        SagaParticipantCommand sagaParticipantCommand = optionalCommand.get();
         transactionalOutbox.enqueue(TransactionalOutboxContext
               .builder()
                     .aggregateType(context.getSagaType())

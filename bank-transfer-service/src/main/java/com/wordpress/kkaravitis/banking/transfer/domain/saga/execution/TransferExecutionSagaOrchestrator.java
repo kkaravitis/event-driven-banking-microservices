@@ -7,6 +7,7 @@ import com.wordpress.kkaravitis.banking.transfer.domain.saga.SagaEvent;
 import com.wordpress.kkaravitis.banking.transfer.domain.saga.SagaOrchestrator;
 import com.wordpress.kkaravitis.banking.transfer.domain.saga.SagaReplyHandlerContext;
 import com.wordpress.kkaravitis.banking.transfer.domain.saga.SagaRepository;
+import com.wordpress.kkaravitis.banking.transfer.domain.saga.SagaRuntimeException;
 import com.wordpress.kkaravitis.banking.transfer.domain.saga.execution.events.FraudApprovedEvent;
 import com.wordpress.kkaravitis.banking.transfer.domain.saga.execution.events.FraudRejectedEvent;
 import com.wordpress.kkaravitis.banking.transfer.domain.saga.execution.events.FundsReleasedEvent;
@@ -67,7 +68,7 @@ public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<Transfer
             case "FundsReleased" ->
                   objectMapper.readValue(payloadJson, FundsReleasedEvent.class);
             default ->
-                  throw new IllegalArgumentException("Unknown reply type: " + messageType);
+                  throw new SagaRuntimeException("Unknown reply type: " + messageType);
         };
     }
 }

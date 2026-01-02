@@ -2,10 +2,10 @@ package com.wordpress.kkaravitis.banking.transfer.domain.saga.execution.commands
 
 import java.math.BigDecimal;
 import java.util.UUID;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
-@AllArgsConstructor
+@Builder
 @Getter
 public class ReleaseFundsCommand {
     private UUID transferId;

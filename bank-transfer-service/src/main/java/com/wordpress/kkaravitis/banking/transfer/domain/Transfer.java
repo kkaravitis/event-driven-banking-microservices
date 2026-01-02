@@ -104,7 +104,8 @@ public class Transfer {
                   .build();
         }
 
-        if (List.of(TransferState.PENDING, TransferState.CANCEL_PENDING).contains(currentState)) {
+        if (List.of(TransferState.PENDING,
+              TransferState.CANCEL_PENDING).contains(currentState)) {
             state = TransferState.COMPLETED;
             return DomainResult.builder()
                   .transition(new Transition(currentState.name(),
@@ -125,8 +126,6 @@ public class Transfer {
         if (List.of(TransferState.PENDING,
               TransferState.CANCEL_PENDING,
               TransferState.CANCELLED).contains(currentState)) {
-
-            state = TransferState.REJECTED;
             return DomainResult.builder()
                   .errors(List.of(new DomainError(DomainErrorCode.REJECT_TOO_LATE,
                         String.format("Transfer %s failed to transit to REJECTED state from state %s",
@@ -143,7 +142,7 @@ public class Transfer {
 
         if (currentState == TransferState.PENDING) {
             this.state = TransferState.REJECTED;
-
+            this.fundsReservationId = null;
             return DomainResult.builder()
                   .transition(new Transition(currentState.name(),
                         this.state.name()))
@@ -163,6 +162,7 @@ public class Transfer {
                     TransferState.CANCEL_PENDING)
               .contains(currentState)) {
             state = TransferState.CANCELLED;
+            fundsReservationId = null;
             return DomainResult.builder()
                   .transition(new Transition(currentState.name(),
                         state.name()))
@@ -224,5 +224,9 @@ public class Transfer {
               .build();
     }
 
+    public DomainResult notifyFundsReservation(String fundsReservationId) {
+        this.fundsReservationId = fundsReservationId;
+        return DomainResult.builder().build();
+    }
 
 }

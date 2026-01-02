@@ -50,7 +50,6 @@ public class TransferServiceImpl implements TransferService {
               .amount(command.getAmount())
               .currency(command.getCurrency())
               .status(TransferExecutionSagaStatus.FRAUD_CHECK_PENDING)
-              .fraudDecision("UNKNOWN")
               .build();
         String sagaDataJson = writeJson(sagaData);
         SagaEntity sagaEntity = new SagaEntity(
@@ -86,31 +85,45 @@ public class TransferServiceImpl implements TransferService {
     }
 
     @Transactional
-    public DomainResult completeTransfer(CompleteTransferCommand cmd) {
-        UUID transferId = cmd.getTransferId();
+    public DomainResult completeTransfer(CompleteTransferCommand command) {
+        UUID transferId = command.getTransferId();
         Optional<Transfer> transferOptional = transferRepository.findById(transferId);
         if (transferOptional.isEmpty()) {
            return DomainResult.builder()
                  .errors(List.of(new DomainError(DomainErrorCode.NOT_EXISTING,
                        String.format("The Transfer entity with id %s was not found during Transfer Completion",
-                             cmd.getTransferId()))))
+                             command.getTransferId()))))
                  .build();
         }
         return transferOptional.get().complete();
     }
 
     @Transactional
-    public DomainResult rejectTransfer(RejectTransferCommand cmd) {
-        UUID transferId = cmd.getTransferId();
+    public DomainResult rejectTransfer(RejectTransferCommand command) {
+        UUID transferId = command.getTransferId();
         Optional<Transfer> transferOptional = transferRepository.findById(transferId);
         if (transferOptional.isEmpty()) {
             return DomainResult.builder()
                   .errors(List.of(new DomainError(DomainErrorCode.NOT_EXISTING,
                         String.format("The Transfer entity with id %s was not found during Transfer Rejection",
-                              cmd.getTransferId()))))
+                              command.getTransferId()))))
                   .build();
         }
         return transferOptional.get().reject();
+    }
+
+    @Transactional
+    public DomainResult markFundsReservation(MarkFundsReservationCommand command) {
+        UUID transferId = command.getTransferId();
+        Optional<Transfer> transferOptional = transferRepository.findById(transferId);
+        if (transferOptional.isEmpty()) {
+            return DomainResult.builder()
+                  .errors(List.of(new DomainError(DomainErrorCode.NOT_EXISTING,
+                        String.format("The Transfer entity with id %s was not found during Transfer Rejection",
+                              command.getTransferId()))))
+                  .build();
+        }
+        return transferOptional.get().notifyFundsReservation(command.getReservationId());
     }
 
     private String writeJson(Object value) {

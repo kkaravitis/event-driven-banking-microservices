@@ -9,12 +9,15 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 @Getter
 public class TransferCancellationSagaData implements SagaData<TransferCancellationSagaStatus> {
     private UUID sagaId;
     private UUID transferId;
     private TransferCancellationSagaStatus status;
+
+    @Override
+    public SagaData<TransferCancellationSagaStatus> withStatus(TransferCancellationSagaStatus newStatus) {
+        return toBuilder().status(newStatus).build();
+    }
 }
