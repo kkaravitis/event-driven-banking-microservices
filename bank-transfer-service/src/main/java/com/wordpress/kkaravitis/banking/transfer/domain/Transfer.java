@@ -14,7 +14,6 @@ import java.util.UUID;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
-import org.springframework.data.annotation.Version;
 
 @Getter
 @Entity
@@ -22,6 +21,10 @@ import org.springframework.data.annotation.Version;
 @ToString
 @Table(name = "transfer")
 public class Transfer {
+    private static final String ILLEGAL_STATE_ERROR_TEMPLATE = "Transfer %s is in illegal state %s";
+
+    private static final String TRANSITION_ERROR_TEMPLATE = "Transfer %s was not allowed to transit from state %s to state %s";
+
     @Id
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
@@ -50,9 +53,6 @@ public class Transfer {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
-
-    @Version
-    private long version;
 
     protected Transfer() { }
 
@@ -84,21 +84,25 @@ public class Transfer {
         this.updatedAt = Instant.now();
     }
 
-    public DomainResult complete() {
+    public AggregateResult complete() {
         TransferState currentState = state;
 
         if (List.of(TransferState.CANCELLED, TransferState.REJECTED).contains(currentState)) {
-            return DomainResult.builder()
-                  .errors(List.of(new DomainError(DomainErrorCode.COMPLETE_TOO_LATE,
+            return AggregateResult.builder()
+                  .aggregateId(id)
+                  .error(new DomainError(DomainErrorCode.COMPLETE_TOO_LATE,
                         String
-                              .format("Transfer %s failed to transit to COMPLETED state from state %s",
+                              .format(TRANSITION_ERROR_TEMPLATE,
                                     id,
-                                    currentState))))
+                                    currentState,
+                                    TransferState.COMPLETED)))
+
                   .build();
         }
 
         if (currentState == TransferState.COMPLETED) {
-            return DomainResult.builder()
+            return AggregateResult.builder()
+                  .aggregateId(id)
                   .transition(new Transition(TransferState.COMPLETED.name(),
                         TransferState.COMPLETED.name()))
                   .build();
@@ -107,34 +111,37 @@ public class Transfer {
         if (List.of(TransferState.PENDING,
               TransferState.CANCEL_PENDING).contains(currentState)) {
             state = TransferState.COMPLETED;
-            return DomainResult.builder()
+            return AggregateResult.builder()
+                  .aggregateId(id)
                   .transition(new Transition(currentState.name(),
                         state.name()))
                   .build();
         }
 
-        return DomainResult.builder()
-              .errors(List.of(new DomainError(DomainErrorCode.ILLEGAL_STATE, String
-                    .format("Transfer %s is in illegal state %s", id, this))))
+        return AggregateResult.builder()
+              .aggregateId(id)
+              .error(new DomainError(DomainErrorCode.ILLEGAL_STATE, String
+                    .format(ILLEGAL_STATE_ERROR_TEMPLATE, id, this)))
               .build();
 
     }
 
-    public DomainResult reject() {
+    public AggregateResult reject() {
         TransferState currentState = state;
 
-        if (List.of(TransferState.PENDING,
-              TransferState.CANCEL_PENDING,
+        if (List.of(TransferState.CANCEL_PENDING,
               TransferState.CANCELLED).contains(currentState)) {
-            return DomainResult.builder()
-                  .errors(List.of(new DomainError(DomainErrorCode.REJECT_TOO_LATE,
-                        String.format("Transfer %s failed to transit to REJECTED state from state %s",
-                              id, currentState))))
+            return AggregateResult.builder()
+                  .aggregateId(id)
+                  .error(new DomainError(DomainErrorCode.REJECT_TOO_LATE,
+                        String.format(TRANSITION_ERROR_TEMPLATE,
+                              id, currentState, TransferState.REJECTED)))
                   .build();
         }
 
         if (currentState == TransferState.REJECTED) {
-            return DomainResult.builder()
+            return AggregateResult.builder()
+                  .aggregateId(id)
                   .transition(new Transition(currentState.name(),
                         currentState.name()))
                   .build();
@@ -143,19 +150,21 @@ public class Transfer {
         if (currentState == TransferState.PENDING) {
             this.state = TransferState.REJECTED;
             this.fundsReservationId = null;
-            return DomainResult.builder()
+            return AggregateResult.builder()
+                  .aggregateId(id)
                   .transition(new Transition(currentState.name(),
                         this.state.name()))
                   .build();
         }
 
-        return DomainResult.builder()
-              .errors(List.of(new DomainError(DomainErrorCode.ILLEGAL_STATE, String
-                    .format("Transfer %s is in illegal state %s", id, this))))
+        return AggregateResult.builder()
+              .aggregateId(id)
+              .error(new DomainError(DomainErrorCode.ILLEGAL_STATE, String
+                    .format(ILLEGAL_STATE_ERROR_TEMPLATE, id, state)))
               .build();
     }
 
-    public DomainResult markCancelled() {
+    public AggregateResult markCancelled() {
         TransferState currentState = state;
 
         if (List.of(TransferState.PENDING,
@@ -163,45 +172,51 @@ public class Transfer {
               .contains(currentState)) {
             state = TransferState.CANCELLED;
             fundsReservationId = null;
-            return DomainResult.builder()
+            return AggregateResult.builder()
+                  .aggregateId(id)
                   .transition(new Transition(currentState.name(),
                         state.name()))
                   .build();
         }
 
         if (currentState == TransferState.CANCELLED) {
-            return DomainResult.builder()
+            return AggregateResult.builder()
+                  .aggregateId(id)
                   .transition(new Transition(currentState.name(),
                         state.name()))
                   .build();
         }
 
         if (List.of(TransferState.REJECTED, TransferState.COMPLETED).contains(currentState)) {
-            return DomainResult.builder()
-                  .errors(List.of(new DomainError(DomainErrorCode.CANCEL_TOO_LATE,
-                        String.format("Transfer %s failed to transit to CANCELLED state from state %s",
-                        id, currentState))))
+            return AggregateResult.builder()
+                  .aggregateId(id)
+                  .error(new DomainError(DomainErrorCode.CANCEL_TOO_LATE,
+                        String.format(TRANSITION_ERROR_TEMPLATE,
+                              id, currentState, TransferState.CANCELLED)))
                   .build();
         }
 
-        return DomainResult.builder()
-              .errors(List.of(new DomainError(DomainErrorCode.ILLEGAL_STATE, String
-                    .format("Transfer %s is in illegal state %s", id, this))))
+        return AggregateResult.builder()
+              .aggregateId(id)
+              .error(new DomainError(DomainErrorCode.ILLEGAL_STATE, String
+                    .format(ILLEGAL_STATE_ERROR_TEMPLATE, id, state)))
               .build();
     }
 
-    public DomainResult startCancellation() {
+    public AggregateResult markCancellationPending() {
             TransferState currentState = state;
             if (currentState == TransferState.PENDING) {
                 state = TransferState.CANCEL_PENDING;
-                return DomainResult.builder()
+                return AggregateResult.builder()
+                      .aggregateId(id)
                       .transition(new Transition(currentState.name(),
                             state.name()))
                       .build();
             }
 
             if (currentState == TransferState.CANCEL_PENDING) {
-                return DomainResult.builder()
+                return AggregateResult.builder()
+                      .aggregateId(id)
                       .transition(new Transition(currentState.name(),
                             state.name()))
                       .build();
@@ -211,22 +226,29 @@ public class Transfer {
                         TransferState.COMPLETED,
                         TransferState.CANCELLED)
                   .contains(currentState)) {
-                return DomainResult.builder()
-                      .errors(List.of(new DomainError(DomainErrorCode.CANCEL_TOO_LATE,
-                            String.format("Transfer %s failed to transit to CANCEL_PENDING state from state %s",
-                                  id, currentState))))
+                return AggregateResult.builder()
+                      .aggregateId(id)
+                      .error(new DomainError(DomainErrorCode.CANCEL_TOO_LATE,
+                            String.format(TRANSITION_ERROR_TEMPLATE,
+                                  id,
+                                  currentState,
+                                  TransferState.CANCEL_PENDING)))
+
                       .build();
             }
 
-        return DomainResult.builder()
-              .errors(List.of(new DomainError(DomainErrorCode.ILLEGAL_STATE, String
-                    .format("Transfer %s is in illegal state %s", id, this))))
+        return AggregateResult.builder()
+              .aggregateId(id)
+              .error(new DomainError(DomainErrorCode.ILLEGAL_STATE, String
+                    .format(ILLEGAL_STATE_ERROR_TEMPLATE, id, state)))
               .build();
     }
 
-    public DomainResult notifyFundsReservation(String fundsReservationId) {
+    public AggregateResult notifyFundsReservation(String fundsReservationId) {
         this.fundsReservationId = fundsReservationId;
-        return DomainResult.builder().build();
+        return AggregateResult.builder()
+              .aggregateId(id)
+              .build();
     }
 
 }

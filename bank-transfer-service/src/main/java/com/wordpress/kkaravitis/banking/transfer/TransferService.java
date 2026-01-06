@@ -1,19 +1,20 @@
 package com.wordpress.kkaravitis.banking.transfer;
 
-import com.wordpress.kkaravitis.banking.transfer.domain.DomainResult;
+import com.wordpress.kkaravitis.banking.transfer.domain.AggregateResult;
 import java.math.BigDecimal;
 import java.util.UUID;
 import lombok.Builder;
 import lombok.Getter;
 
 public interface TransferService {
-    DomainResult startTransfer(InitiateTransferCommand command);
 
-    DomainResult completeTransfer(CompleteTransferCommand command);
+    AggregateResult startTransfer(InitiateTransferCommand command);
 
-    DomainResult rejectTransfer(RejectTransferCommand command);
+    AggregateResult startCancellation(InitiateCancellationCommand command);
 
-    DomainResult markFundsReservation(MarkFundsReservationCommand command);
+    void handleTransferCancellationParticipantReply(SagaParticipantReply reply);
+
+    void handleTransferExecutionParticipantReply(SagaParticipantReply reply);
 
     @Getter
     @Builder
@@ -25,23 +26,17 @@ public interface TransferService {
         private String currency;
     }
 
-    @Getter
     @Builder
-    class RejectTransferCommand {
-        private UUID transferId;
-        private String reason;
-    }
-
     @Getter
-    @Builder
-    class CompleteTransferCommand {
+    class InitiateCancellationCommand {
+        private String customerId;
         private UUID transferId;
     }
 
-    @Getter
-    @Builder
-    class MarkFundsReservationCommand {
-        private UUID transferId;
-        private String reservationId;
+    record SagaParticipantReply(
+          String messageId,
+          String sagaId,
+          String messageType,
+          String payloadJson) {
     }
 }
