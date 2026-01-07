@@ -28,6 +28,7 @@
         <debezium.version>3.4.0.Final</debezium.version>
         <testcontainers.version>1.21.0</testcontainers.version>
         <lombok.version>1.18.42</lombok.version>
+        <shedlock.version>4.29.0</shedlock.version>
     </properties>
 
     <dependencyManagement>
@@ -63,6 +64,22 @@
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
             </dependency>
+            <dependency>
+                <groupId>net.javacrumbs.shedlock</groupId>
+                <artifactId>shedlock-spring</artifactId>
+                <version>${shedlock.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>net.javacrumbs.shedlock</groupId>
+                <artifactId>shedlock-provider-jdbc-template</artifactId>
+                <version>${shedlock.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.wordpress.kkaravitis</groupId>
+                <artifactId>idempotency-inbox-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -71,6 +88,7 @@
         <module>anti-fraud-service</module>
         <module>bank-account-service</module>
         <module>bank-transfer-service</module>
+        <module>idempotency-inbox-spring-boot-starter</module>
     </modules>
 
 </project>

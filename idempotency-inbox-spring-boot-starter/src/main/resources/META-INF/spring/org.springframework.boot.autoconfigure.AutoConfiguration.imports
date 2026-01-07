@@ -1,0 +1,2 @@
+com.wordpress.kkaravitis.banking.idempotency.inbox.InboxIdempotencyAutoConfiguration
+com.wordpress.kkaravitis.banking.idempotency.inbox.InboxIdempotencySchedulingAutoConfiguration

@@ -10,6 +10,8 @@ import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.even
 import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.events.FundsReservationFailedEvent;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.events.FundsReservedEvent;
 import com.wordpress.kkaravitis.banking.transfer.domain.AggregateResult;
+import com.wordpress.kkaravitis.banking.transfer.domain.DomainError;
+import com.wordpress.kkaravitis.banking.transfer.domain.DomainErrorCode;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -63,10 +65,17 @@ public class FundsReservationNextStepHandler implements TransferExecutionSagaSte
                         .build())
                   .build());
         } else {
+            TransferExecutionSagaStatus newSagaStatus;
+            DomainError domainError = aggregateResult.getError();
+            if (domainError.code() == DomainErrorCode.COMPLETE_TOO_LATE) {
+                newSagaStatus = TransferExecutionSagaStatus.CANCELLED_BY_CANCEL_SAGA;
+            } else {
+                newSagaStatus = TransferExecutionSagaStatus.FAILED;
+            }
             return Optional.of(SagaStepResult.
                   <TransferExecutionSagaStatus>builder()
                   .sagaData(sagaData
-                        .withStatus(TransferExecutionSagaStatus.FAILED))
+                        .withStatus(newSagaStatus))
                   .build());
         }
     }

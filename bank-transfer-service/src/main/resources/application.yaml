@@ -72,3 +72,14 @@ management:
 logging:
   level:
     org.flywaydb: INFO
+
+inbox:
+  cleanup:
+    retention: "P1D"
+    lock-at-most-for: "PT5M"
+    lock-at-least-for: "PT10S"
+
+cron:
+  delete:
+    old:
+      messages: "0 0/10 * * * *"

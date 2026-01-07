@@ -1,4 +1,13 @@
--- V2__create_funds_reservation_table.sql
+
+CREATE TABLE account (
+    account_id      VARCHAR(64)   NOT NULL,
+    customer_id     VARCHAR(64)   NOT NULL,
+    balance         NUMERIC(19,4) NOT NULL,
+    currency        VARCHAR(3)    NOT NULL,
+    version         BIGINT        NOT NULL DEFAULT 0,
+    CONSTRAINT pk_account PRIMARY KEY (account_id)
+);
+CREATE INDEX idx_account_customer_id ON account (customer_id);
 
 CREATE TABLE funds_reservation (
     reservation_id      VARCHAR(64)   NOT NULL,
@@ -23,11 +32,9 @@ CREATE TABLE funds_reservation (
         REFERENCES account (account_id)
 );
 
--- Each transfer should have at most one reservation row
 CREATE UNIQUE INDEX ux_funds_reservation_transfer_id
     ON funds_reservation (transfer_id);
 
--- Optional indexes for reporting / access patterns
 CREATE INDEX idx_funds_reservation_from_account
     ON funds_reservation (from_account_id);
 
@@ -36,3 +43,20 @@ CREATE INDEX idx_funds_reservation_to_account
 
 CREATE INDEX idx_funds_reservation_status
     ON funds_reservation (status);
+
+CREATE TABLE aborted_transfer (
+    transfer_id  UUID       NOT NULL,
+    aborted_at   TIMESTAMP  NOT NULL,
+    reason       TEXT       NULL,
+
+    CONSTRAINT pk_aborted_transfer PRIMARY KEY (transfer_id)
+);
+
+CREATE TABLE outbox_message (
+    message_id         VARCHAR(255)   PRIMARY KEY,
+    correlation_id     UUID           NOT NULL,
+    message_type       VARCHAR(255)   NOT NULL,
+    payload            JSONB          NOT NULL,
+    destination_topic  VARCHAR(255)   NOT NULL,
+    created_at         TIMESTAMPZ     NOT NULL DEFAULT NOW()
+);
