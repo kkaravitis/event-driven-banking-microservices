@@ -1,6 +1,5 @@
 package com.wordpress.kkaravitis.banking.transfer.application.saga.cancellation.steps;
 
-import com.wordpress.kkaravitis.banking.transfer.TransferService;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaStepResult;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.cancellation.TransferCancellationSagaData;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.cancellation.TransferCancellationSagaStatus;
@@ -33,8 +32,6 @@ public class FundsReservationCancellationNextStepHandler implements TransferCanc
             TransferCancellationSagaStatus newStatus;
             if (aggregateResult.isValid()) {
                 newStatus = TransferCancellationSagaStatus.COMPLETED;
-            } else if (aggregateResult.getError().code() == DomainErrorCode.CANCEL_TOO_LATE) {
-                newStatus = TransferCancellationSagaStatus.REJECTED;
             } else {
                 newStatus = TransferCancellationSagaStatus.FAILED;
             }

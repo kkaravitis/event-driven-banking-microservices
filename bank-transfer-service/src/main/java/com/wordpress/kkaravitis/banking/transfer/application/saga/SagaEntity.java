@@ -26,9 +26,6 @@ public class SagaEntity {
     @Column(name = "saga_data", nullable = false, columnDefinition = "jsonb")
     private String sagaDataJson;
 
-    @Version
-    private long version;
-
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

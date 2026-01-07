@@ -1,9 +1,7 @@
 package com.wordpress.kkaravitis.banking.transfer.application.saga.cancellation;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wordpress.kkaravitis.banking.transfer.TransferService.InitiateCancellationCommand;
-import com.wordpress.kkaravitis.banking.transfer.TransferService.InitiateTransferCommand;
 import com.wordpress.kkaravitis.banking.transfer.TransferService.SagaParticipantReply;
 import com.wordpress.kkaravitis.banking.transfer.application.ports.SagaStore;
 import com.wordpress.kkaravitis.banking.transfer.application.ports.TransactionalOutbox;
@@ -17,8 +15,6 @@ import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaRuntimeExc
 import com.wordpress.kkaravitis.banking.transfer.application.saga.cancellation.commands.CancelFundsReservationCommand;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.cancellation.events.FundsReservationCancellationRejectedEvent;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.cancellation.events.FundsReservationCancelledEvent;
-import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.TransferExecutionSagaData;
-import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.TransferExecutionSagaStatus;
 import com.wordpress.kkaravitis.banking.transfer.domain.AggregateResult;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainError;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainErrorCode;
@@ -54,7 +50,7 @@ public class TransferCancellationSagaOrchestrator extends SagaOrchestrator<Trans
                   .build();
         }
         Transfer transfer = storeResult.get();
-        AggregateResult aggregateResult = transfer.markCancellationPending();
+        AggregateResult aggregateResult = transfer.startCancellation();
         TransferCancellationSagaStatus sagaStatus;
         if (aggregateResult.isValid()) {
             sagaStatus = TransferCancellationSagaStatus.CANCEL_PENDING;

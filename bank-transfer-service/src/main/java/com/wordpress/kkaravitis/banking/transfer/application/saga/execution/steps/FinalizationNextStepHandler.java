@@ -49,7 +49,7 @@ public class FinalizationNextStepHandler implements TransferExecutionSagaStepHan
           SagaStepHandlerContext<TransferExecutionSagaStatus> context) {
 
         TransferExecutionSagaStatus newSagaStatus;
-        AggregateResult aggregateResult = context.getTransfer().complete();
+        AggregateResult aggregateResult = context.getTransfer().markCompleted();
         if (aggregateResult.isValid()) {
             newSagaStatus = TransferExecutionSagaStatus.COMPLETED;
         } else {

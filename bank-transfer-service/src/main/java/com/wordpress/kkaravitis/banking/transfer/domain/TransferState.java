@@ -1,7 +1,8 @@
 package com.wordpress.kkaravitis.banking.transfer.domain;
 
 public enum TransferState {
-    PENDING,
+    REQUESTED,
+    COMPLETION_PENDING,
     COMPLETED,
     REJECTED,
     CANCEL_PENDING,

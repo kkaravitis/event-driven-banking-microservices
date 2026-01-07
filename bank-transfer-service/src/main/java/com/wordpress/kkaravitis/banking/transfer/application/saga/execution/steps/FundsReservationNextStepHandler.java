@@ -45,7 +45,7 @@ public class FundsReservationNextStepHandler implements TransferExecutionSagaSte
         final FundsReservedEvent event = (FundsReservedEvent)context.getEvent();
         final TransferExecutionSagaData sagaData = (TransferExecutionSagaData) context.getSagaData();
 
-        AggregateResult aggregateResult = context.getTransfer().notifyFundsReservation(event.getReservationId());
+        AggregateResult aggregateResult = context.getTransfer().startCompletion(event.getReservationId());
 
         if (aggregateResult.isValid()) {
             return Optional.of(SagaStepResult.

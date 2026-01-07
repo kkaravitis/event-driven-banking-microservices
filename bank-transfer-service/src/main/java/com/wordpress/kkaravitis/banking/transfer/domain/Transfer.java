@@ -5,8 +5,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -48,6 +50,10 @@ public class Transfer {
     @Column(name = "funds_reservation_id")
     private String fundsReservationId;
 
+    @Version
+    @Column(name = "version")
+    private long version;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -66,7 +72,7 @@ public class Transfer {
         this.toAccountId = toAccountId;
         this.amount = amount;
         this.currency = currency;
-        this.state = TransferState.PENDING;
+        this.state = TransferState.REQUESTED;
         this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
     }
@@ -84,33 +90,18 @@ public class Transfer {
         this.updatedAt = Instant.now();
     }
 
-    public AggregateResult complete() {
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = Instant.now();
+    }
+
+    public AggregateResult startCompletion(String fundsReservationId) {
         TransferState currentState = state;
 
-        if (List.of(TransferState.CANCELLED, TransferState.REJECTED).contains(currentState)) {
-            return AggregateResult.builder()
-                  .aggregateId(id)
-                  .error(new DomainError(DomainErrorCode.COMPLETE_TOO_LATE,
-                        String
-                              .format(TRANSITION_ERROR_TEMPLATE,
-                                    id,
-                                    currentState,
-                                    TransferState.COMPLETED)))
+        if (currentState == TransferState.REQUESTED) {
+            this.fundsReservationId = fundsReservationId;
+            state = TransferState.COMPLETION_PENDING;
 
-                  .build();
-        }
-
-        if (currentState == TransferState.COMPLETED) {
-            return AggregateResult.builder()
-                  .aggregateId(id)
-                  .transition(new Transition(TransferState.COMPLETED.name(),
-                        TransferState.COMPLETED.name()))
-                  .build();
-        }
-
-        if (List.of(TransferState.PENDING,
-              TransferState.CANCEL_PENDING).contains(currentState)) {
-            state = TransferState.COMPLETED;
             return AggregateResult.builder()
                   .aggregateId(id)
                   .transition(new Transition(currentState.name(),
@@ -118,19 +109,102 @@ public class Transfer {
                   .build();
         }
 
-        return AggregateResult.builder()
-              .aggregateId(id)
-              .error(new DomainError(DomainErrorCode.ILLEGAL_STATE, String
-                    .format(ILLEGAL_STATE_ERROR_TEMPLATE, id, this)))
-              .build();
+        if (currentState == TransferState.COMPLETION_PENDING) {
 
+            return AggregateResult.builder()
+                  .aggregateId(id)
+                  .transition(new Transition(currentState.name(),
+                        state.name()))
+                  .build();
+        }
+
+        if (List.of(TransferState.CANCEL_PENDING,
+              TransferState.CANCELLED
+              ).contains(currentState)) {
+
+            return AggregateResult.builder()
+                  .aggregateId(id)
+                  .error(new DomainError(DomainErrorCode.COMPLETE_TOO_LATE,
+                        String.format(TRANSITION_ERROR_TEMPLATE, id,
+                              currentState, TransferState.COMPLETION_PENDING)))
+                  .build();
+        }
+
+        if (List.of(TransferState.COMPLETED,
+                    TransferState.REJECTED)
+              .contains(currentState)) {
+
+            return AggregateResult.builder()
+                  .aggregateId(id)
+                  .error(new DomainError(DomainErrorCode.UNEXPECTED_TRANSITION,
+                        String.format(TRANSITION_ERROR_TEMPLATE, id,
+                              currentState, TransferState.COMPLETION_PENDING)))
+                  .build();
+        }
+
+        return illegalStateError();
+    }
+
+    public AggregateResult markCompleted() {
+        TransferState currentState = state;
+
+        if (currentState == TransferState.COMPLETION_PENDING) {
+            state = TransferState.COMPLETED;
+            return successfulTransition(currentState);
+        }
+
+        if (currentState == TransferState.COMPLETED) {
+            return successfulTransition(currentState);
+        }
+
+        if (List.of(TransferState.CANCELLED,
+                    TransferState.CANCEL_PENDING)
+              .contains(currentState)) {
+            return transitionError(DomainErrorCode.COMPLETE_TOO_LATE,
+                  TransferState.COMPLETED);
+        }
+
+        if (currentState == TransferState.REQUESTED) {
+            return transitionError(DomainErrorCode.UNEXPECTED_TRANSITION,
+                  TransferState.COMPLETED);
+        }
+
+        if (currentState == TransferState.REJECTED) {
+            return transitionError(DomainErrorCode.UNEXPECTED_TRANSITION,
+                  TransferState.COMPLETED);
+        }
+
+        return illegalStateError();
     }
 
     public AggregateResult reject() {
         TransferState currentState = state;
 
+        if (List.of(TransferState.COMPLETION_PENDING,
+                    TransferState.REQUESTED)
+              .contains(currentState)) {
+            state = TransferState.REJECTED;
+
+            return AggregateResult.builder()
+                  .aggregateId(id)
+                  .transition(new Transition(currentState.name(),
+                        this.state.name()))
+                  .build();
+        }
+
+        if (currentState == TransferState.REJECTED) {
+
+            return AggregateResult.builder()
+                  .aggregateId(id)
+                  .transition(new Transition(currentState.name(),
+                        currentState.name()))
+                  .build();
+        }
+
         if (List.of(TransferState.CANCEL_PENDING,
-              TransferState.CANCELLED).contains(currentState)) {
+                    TransferState.CANCELLED)
+              .contains(currentState)) {
+
             return AggregateResult.builder()
                   .aggregateId(id)
                   .error(new DomainError(DomainErrorCode.REJECT_TOO_LATE,
@@ -139,39 +213,66 @@ public class Transfer {
                   .build();
         }
 
-        if (currentState == TransferState.REJECTED) {
+        if (currentState == TransferState.COMPLETED) {
             return AggregateResult.builder()
                   .aggregateId(id)
-                  .transition(new Transition(currentState.name(),
-                        currentState.name()))
+                  .error(new DomainError(DomainErrorCode.UNEXPECTED_TRANSITION,
+                        String.format(TRANSITION_ERROR_TEMPLATE,
+                              id, currentState, TransferState.REJECTED)))
                   .build();
         }
 
-        if (currentState == TransferState.PENDING) {
-            this.state = TransferState.REJECTED;
-            this.fundsReservationId = null;
+        return illegalStateError();
+    }
+
+    public AggregateResult startCancellation() {
+        TransferState currentState = state;
+        if (currentState == TransferState.REQUESTED) {
+            state = TransferState.CANCEL_PENDING;
             return AggregateResult.builder()
                   .aggregateId(id)
                   .transition(new Transition(currentState.name(),
-                        this.state.name()))
+                        state.name()))
                   .build();
         }
 
-        return AggregateResult.builder()
-              .aggregateId(id)
-              .error(new DomainError(DomainErrorCode.ILLEGAL_STATE, String
-                    .format(ILLEGAL_STATE_ERROR_TEMPLATE, id, state)))
-              .build();
+        if (currentState == TransferState.CANCEL_PENDING) {
+            return AggregateResult.builder()
+                  .aggregateId(id)
+                  .transition(new Transition(currentState.name(),
+                        state.name()))
+                  .build();
+        }
+
+        if (List.of(TransferState.REJECTED,
+                    TransferState.COMPLETED,
+                    TransferState.COMPLETION_PENDING)
+              .contains(currentState)) {
+            return AggregateResult.builder()
+                  .aggregateId(id)
+                  .error(new DomainError(DomainErrorCode.CANCEL_TOO_LATE,
+                        String.format(TRANSITION_ERROR_TEMPLATE, id,
+                              currentState, TransferState.CANCEL_PENDING)))
+                  .build();
+        }
+
+        if (currentState == TransferState.CANCELLED) {
+            return AggregateResult.builder()
+                  .aggregateId(id)
+                  .error(new DomainError(DomainErrorCode.UNEXPECTED_TRANSITION,
+                        String.format(TRANSITION_ERROR_TEMPLATE, id,
+                              currentState, TransferState.CANCEL_PENDING)))
+                  .build();
+        }
+
+        return illegalStateError();
     }
 
     public AggregateResult markCancelled() {
         TransferState currentState = state;
 
-        if (List.of(TransferState.PENDING,
-                    TransferState.CANCEL_PENDING)
-              .contains(currentState)) {
+        if (currentState == TransferState.CANCEL_PENDING) {
             state = TransferState.CANCELLED;
-            fundsReservationId = null;
             return AggregateResult.builder()
                   .aggregateId(id)
                   .transition(new Transition(currentState.name(),
@@ -187,15 +288,32 @@ public class Transfer {
                   .build();
         }
 
-        if (List.of(TransferState.REJECTED, TransferState.COMPLETED).contains(currentState)) {
+        if (List.of(TransferState.REQUESTED,
+                    TransferState.REJECTED,
+                    TransferState.COMPLETED,
+                    TransferState.COMPLETION_PENDING
+              ).contains(currentState)) {
             return AggregateResult.builder()
                   .aggregateId(id)
-                  .error(new DomainError(DomainErrorCode.CANCEL_TOO_LATE,
+                  .error(new DomainError(DomainErrorCode.UNEXPECTED_TRANSITION,
                         String.format(TRANSITION_ERROR_TEMPLATE,
                               id, currentState, TransferState.CANCELLED)))
                   .build();
         }
 
+        return illegalStateError();
+    }
+
+    private AggregateResult transitionError(DomainErrorCode code, TransferState toState) {
+        return AggregateResult.builder()
+              .aggregateId(id)
+              .error(new DomainError(DomainErrorCode.COMPLETE_TOO_LATE,
+                    String.format(TRANSITION_ERROR_TEMPLATE, id,
+                          state, toState)))
+              .build();
+    }
+
+    private AggregateResult illegalStateError() {
         return AggregateResult.builder()
               .aggregateId(id)
               .error(new DomainError(DomainErrorCode.ILLEGAL_STATE, String
@@ -203,51 +321,11 @@ public class Transfer {
               .build();
     }
 
-    public AggregateResult markCancellationPending() {
-            TransferState currentState = state;
-            if (currentState == TransferState.PENDING) {
-                state = TransferState.CANCEL_PENDING;
-                return AggregateResult.builder()
-                      .aggregateId(id)
-                      .transition(new Transition(currentState.name(),
-                            state.name()))
-                      .build();
-            }
-
-            if (currentState == TransferState.CANCEL_PENDING) {
-                return AggregateResult.builder()
-                      .aggregateId(id)
-                      .transition(new Transition(currentState.name(),
-                            state.name()))
-                      .build();
-            }
-
-            if (List.of(TransferState.REJECTED,
-                        TransferState.COMPLETED,
-                        TransferState.CANCELLED)
-                  .contains(currentState)) {
-                return AggregateResult.builder()
-                      .aggregateId(id)
-                      .error(new DomainError(DomainErrorCode.CANCEL_TOO_LATE,
-                            String.format(TRANSITION_ERROR_TEMPLATE,
-                                  id,
-                                  currentState,
-                                  TransferState.CANCEL_PENDING)))
-
-                      .build();
-            }
-
+    private AggregateResult successfulTransition(TransferState fromState) {
         return AggregateResult.builder()
               .aggregateId(id)
-              .error(new DomainError(DomainErrorCode.ILLEGAL_STATE, String
-                    .format(ILLEGAL_STATE_ERROR_TEMPLATE, id, state)))
-              .build();
-    }
-
-    public AggregateResult notifyFundsReservation(String fundsReservationId) {
-        this.fundsReservationId = fundsReservationId;
-        return AggregateResult.builder()
-              .aggregateId(id)
+              .transition(new Transition(fromState.name(),
+                    state.name()))
               .build();
     }
 
