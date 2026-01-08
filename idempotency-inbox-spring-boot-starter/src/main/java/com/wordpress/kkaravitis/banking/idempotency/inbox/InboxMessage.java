@@ -5,17 +5,22 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
+import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
+@Getter
 @Entity
-@Table(
-    name = "inbox_message",
-    uniqueConstraints = @UniqueConstraint(name = "ux_inbox_message_message_id", columnNames = "message_id")
-)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EqualsAndHashCode(of = {"id"})
+@ToString
+@Table(name = "inbox_message")
 public class InboxMessage {
 
     @Id
@@ -34,31 +39,8 @@ public class InboxMessage {
     @Column(name = "received_at", nullable = false, updatable = false)
     private Instant receivedAt;
 
-    protected InboxMessage() {
-        // for JPA
-    }
-
     public InboxMessage(String messageId) {
         this.messageId = messageId;
         this.receivedAt = Instant.now();
-    }
-
-    @PrePersist
-    void prePersist() {
-        if (receivedAt == null) {
-            receivedAt = Instant.now();
-        }
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getMessageId() {
-        return messageId;
-    }
-
-    public Instant getReceivedAt() {
-        return receivedAt;
     }
 }

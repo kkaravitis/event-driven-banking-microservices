@@ -2,11 +2,11 @@ package com.wordpress.kkaravitis.banking.transfer.application.saga.execution;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wordpress.kkaravitis.banking.outbox.TransactionalOutbox;
+import com.wordpress.kkaravitis.banking.outbox.TransactionalOutbox.TransactionalOutboxContext;
 import com.wordpress.kkaravitis.banking.transfer.TransferService.InitiateTransferCommand;
 import com.wordpress.kkaravitis.banking.transfer.TransferService.SagaParticipantReply;
 import com.wordpress.kkaravitis.banking.transfer.application.ports.SagaStore;
-import com.wordpress.kkaravitis.banking.transfer.application.ports.TransactionalOutbox;
-import com.wordpress.kkaravitis.banking.transfer.application.ports.TransactionalOutbox.TransactionalOutboxContext;
 import com.wordpress.kkaravitis.banking.transfer.application.ports.TransferStore;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaEntity;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaEvent;
@@ -24,8 +24,8 @@ import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.even
 import com.wordpress.kkaravitis.banking.transfer.domain.AggregateResult;
 import com.wordpress.kkaravitis.banking.transfer.domain.Transfer;
 import com.wordpress.kkaravitis.banking.transfer.domain.Transition;
+import com.wordpress.kkaravitis.banking.transfer.infrastructure.kafka.Topics;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Isolation;
@@ -34,13 +34,17 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<TransferExecutionSagaStatus, TransferExecutionSagaStepHandler> {
 
+    private final Topics topics;
+
     public TransferExecutionSagaOrchestrator(
           SagaStore sagaStore,
           TransferStore transferStore,
           ObjectMapper objectMapper,
           List<TransferExecutionSagaStepHandler> handlers,
-          TransactionalOutbox transactionalOutboxPort) {
+          TransactionalOutbox transactionalOutboxPort,
+          Topics topics) {
         super(sagaStore, transferStore, objectMapper, handlers, transactionalOutboxPort);
+        this.topics = topics;
     }
 
     @Transactional
@@ -89,10 +93,10 @@ public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<Transfer
         transactionalOutbox.enqueue(TransactionalOutboxContext.builder()
               .aggregateId(sagaId)
               .aggregateType("TransferExecutionSaga")
-              .destinationTopic("check-fraud-commands")
+              .destinationTopic(topics.antiFraudServiceCommandsTopic())
               .messageType("CheckFraudCommand")
               .payload(checkFraudCommand)
-              .headers(Map.of("reply-topic", "transfer-execution-saga-replies"))
+              .replyTopic(topics.transferExecutionSagaRepliesTopic())
               .build());
 
         return AggregateResult.builder()
@@ -109,7 +113,7 @@ public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<Transfer
               .payloadJson(reply.payloadJson())
               .sagaDataType(TransferExecutionSagaData.class)
               .sagaType("TransferExecutionSaga")
-              .sagaReplyTopic("transfer-execution-saga-replies")
+              .sagaReplyTopic(topics.transferExecutionSagaRepliesTopic())
               .build());
     }
 

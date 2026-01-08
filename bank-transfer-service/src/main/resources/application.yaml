@@ -1,3 +1,10 @@
+app:
+  kafka:
+    topics:
+      transfer-execution-saga-replies-topic: transfer-execution-saga-replies
+      transfer-cancellation-saga-replies-topic: transfer-cancellation-saga-replies
+      accounts-service-commands-topic: accounts-service-commands
+      anti-fraud-service-commands-topic: anti-fraud-service-commands
 server:
   port: ${SERVER_PORT:8080}
 
@@ -31,21 +38,7 @@ spring:
       mode: never
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      properties:
-        spring.json.add.type.headers: false
-
-    consumer:
-      group-id: ${KAFKA_CONSUMER_GROUP:bank-transfer-service}
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "*"
+    bootstrap-servers: localhost:9092
 
 management:
   endpoints:

@@ -1,26 +1,34 @@
-package com.wordpress.kkaravitis.banking.transfer.adapter.outbound.outbox;
+package com.wordpress.kkaravitis.banking.outbox;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wordpress.kkaravitis.banking.transfer.application.ports.TransactionalOutbox;
 import java.time.Instant;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Default implementation that persists a row in outbox_message.
+ */
 @RequiredArgsConstructor
-@Component
 public class TransactionalOutboxAdapter implements TransactionalOutbox {
     private final OutboxMessageRepository outboxMessageRepository;
     private final ObjectMapper objectMapper;
 
+    @Transactional(propagation = Propagation.MANDATORY)
     @Override
     public void enqueue(TransactionalOutboxContext context) {
+        String messageId = context.getAggregateType() + "-" + UUID.randomUUID();
         OutboxMessage outboxMessage = OutboxMessage.builder()
-              .messageType(context.getMessageType())
-              .createdAt(Instant.now())
-              .correlationId(context.getAggregateId())
+              .messageId(messageId)
               .destinationTopic(context.getDestinationTopic())
               .payload(toJson(context.getPayload()))
+              .aggregateType(context.getAggregateType())
+              .aggregateId(context.getAggregateId())
+              .messageType(context.getMessageType())
+              .replyTopic(context.getReplyTopic())
+              .createdAt(Instant.now())
               .build();
 
         outboxMessageRepository.save(outboxMessage);

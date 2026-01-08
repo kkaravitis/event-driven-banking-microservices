@@ -95,15 +95,6 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
-        <dependency>
-            <groupId>net.javacrumbs.shedlock</groupId>
-            <artifactId>shedlock-spring</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>net.javacrumbs.shedlock</groupId>
-            <artifactId>shedlock-provider-jdbc-template</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>com.wordpress.kkaravitis</groupId>
@@ -111,13 +102,10 @@
         </dependency>
 
         <dependency>
-            <groupId>io.debezium</groupId>
-            <artifactId>debezium-api</artifactId>
+            <groupId>com.wordpress.kkaravitis</groupId>
+            <artifactId>transactional-outbox-spring-boot-starter</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.debezium</groupId>
-            <artifactId>debezium-embedded</artifactId>
-        </dependency>
+
 
     </dependencies>
 

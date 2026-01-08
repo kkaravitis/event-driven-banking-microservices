@@ -2,9 +2,9 @@ package com.wordpress.kkaravitis.banking.transfer.application.saga;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wordpress.kkaravitis.banking.outbox.TransactionalOutbox;
+import com.wordpress.kkaravitis.banking.outbox.TransactionalOutbox.TransactionalOutboxContext;
 import com.wordpress.kkaravitis.banking.transfer.application.ports.SagaStore;
-import com.wordpress.kkaravitis.banking.transfer.application.ports.TransactionalOutbox;
-import com.wordpress.kkaravitis.banking.transfer.application.ports.TransactionalOutbox.TransactionalOutboxContext;
 import com.wordpress.kkaravitis.banking.transfer.application.ports.TransferStore;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaStepHandler.SagaStepHandlerContext;
 import com.wordpress.kkaravitis.banking.transfer.domain.Transfer;
@@ -116,8 +116,7 @@ public abstract class SagaOrchestrator<T extends Enum<T>, S extends SagaStepHand
     }
 
     private void persistSaga(SagaEntity sagaEntity, SagaData<T> sagaData) {
-        sagaEntity.setSagaState(sagaData.getStatus().name());
-        sagaEntity.setSagaDataJson(toJson(sagaData));
+        sagaEntity.update(sagaData.getStatus().name(), toJson(sagaData));
         sagaStore.save(sagaEntity);
     }
 
@@ -137,12 +136,12 @@ public abstract class SagaOrchestrator<T extends Enum<T>, S extends SagaStepHand
 
     private void enqueueCommand(SagaReplyHandlerContext<T> context, UUID sagaId, SagaParticipantCommand cmd) {
         transactionalOutbox.enqueue(TransactionalOutboxContext.builder()
-              .aggregateType(context.getSagaType())
-              .messageType(cmd.getMessageType())
               .destinationTopic(cmd.getDestinationTopic())
-              .aggregateId(sagaId)
-              .headers(Map.of("reply-topic", context.getSagaReplyTopic()))
               .payload(cmd.getPayload())
+              .aggregateType(context.getSagaType())
+              .aggregateId(sagaId)
+              .messageType(cmd.getMessageType())
+              .replyTopic(context.getSagaReplyTopic())
               .build());
     }
 

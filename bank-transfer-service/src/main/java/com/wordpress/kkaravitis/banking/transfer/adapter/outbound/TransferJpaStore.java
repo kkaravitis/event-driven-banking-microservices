@@ -1,6 +1,5 @@
-package com.wordpress.kkaravitis.banking.transfer.adapter.outbound.db;
+package com.wordpress.kkaravitis.banking.transfer.adapter.outbound;
 
-import com.wordpress.kkaravitis.banking.transfer.adapter.outbound.db.TransferJpaRepository;
 import com.wordpress.kkaravitis.banking.transfer.application.ports.TransferStore;
 import com.wordpress.kkaravitis.banking.transfer.domain.Transfer;
 import java.util.Optional;

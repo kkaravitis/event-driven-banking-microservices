@@ -1,0 +1,2 @@
+com.wordpress.kkaravitis.banking.outbox.TransactionalOutboxAutoConfiguration
+com.wordpress.kkaravitis.banking.outbox.TransactionalOutboxSchedulingAutoConfiguration

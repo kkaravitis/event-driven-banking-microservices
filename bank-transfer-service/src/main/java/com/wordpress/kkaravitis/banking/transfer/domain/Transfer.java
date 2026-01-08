@@ -13,12 +13,15 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @Getter
 @Entity
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EqualsAndHashCode(of = {"id"})
 @ToString
 @Table(name = "transfer")
@@ -59,8 +62,6 @@ public class Transfer {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
-
-    protected Transfer() { }
 
     private Transfer(UUID id,
           String fromAccountId,

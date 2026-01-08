@@ -80,15 +80,20 @@
                 <artifactId>idempotency-inbox-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.wordpress.kkaravitis</groupId>
+                <artifactId>transactional-outbox-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <modules>
-        <module>gateway</module>
         <module>anti-fraud-service</module>
         <module>bank-account-service</module>
         <module>bank-transfer-service</module>
         <module>idempotency-inbox-spring-boot-starter</module>
+        <module>transactional-outbox-spring-boot-starter</module>
     </modules>
 
 </project>

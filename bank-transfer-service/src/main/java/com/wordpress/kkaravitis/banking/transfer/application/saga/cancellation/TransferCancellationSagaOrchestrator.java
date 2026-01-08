@@ -1,11 +1,11 @@
 package com.wordpress.kkaravitis.banking.transfer.application.saga.cancellation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wordpress.kkaravitis.banking.outbox.TransactionalOutbox;
+import com.wordpress.kkaravitis.banking.outbox.TransactionalOutbox.TransactionalOutboxContext;
 import com.wordpress.kkaravitis.banking.transfer.TransferService.InitiateCancellationCommand;
 import com.wordpress.kkaravitis.banking.transfer.TransferService.SagaParticipantReply;
 import com.wordpress.kkaravitis.banking.transfer.application.ports.SagaStore;
-import com.wordpress.kkaravitis.banking.transfer.application.ports.TransactionalOutbox;
-import com.wordpress.kkaravitis.banking.transfer.application.ports.TransactionalOutbox.TransactionalOutboxContext;
 import com.wordpress.kkaravitis.banking.transfer.application.ports.TransferStore;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaEntity;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaEvent;
@@ -20,8 +20,8 @@ import com.wordpress.kkaravitis.banking.transfer.domain.DomainError;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainErrorCode;
 import com.wordpress.kkaravitis.banking.transfer.domain.Transfer;
 import com.wordpress.kkaravitis.banking.transfer.domain.Transition;
+import com.wordpress.kkaravitis.banking.transfer.infrastructure.kafka.Topics;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
@@ -31,13 +31,17 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class TransferCancellationSagaOrchestrator extends SagaOrchestrator<TransferCancellationSagaStatus, TransferCancellationSagaStepHandler> {
 
+    private final Topics topics;
+
     public TransferCancellationSagaOrchestrator(
+          Topics topics,
           SagaStore sagaStore,
           TransferStore transferStore,
           ObjectMapper objectMapper,
           List<TransferCancellationSagaStepHandler> handlers,
           TransactionalOutbox transactionalOutboxPort) {
         super(sagaStore, transferStore, objectMapper, handlers, transactionalOutboxPort);
+        this.topics = topics;
     }
 
     public AggregateResult start(InitiateCancellationCommand command) {
@@ -86,13 +90,13 @@ public class TransferCancellationSagaOrchestrator extends SagaOrchestrator<Trans
         transactionalOutbox.enqueue(TransactionalOutboxContext.builder()
               .aggregateId(sagaId)
               .aggregateType("TransferCancellationSaga")
-              .destinationTopic("accounts-commands")
+              .destinationTopic(topics.accountsServiceCommandsTopic())
               .messageType("CancelFundsReservation")
               .payload(CancelFundsReservationCommand.builder()
                     .transferId(transferId)
                     .customerId(command.getCustomerId())
                     .build())
-              .headers(Map.of("reply-topic", "transfer-cancellation-saga-replies"))
+              .replyTopic(topics.transferCancellationSagaRepliesTopic())
               .build());
 
         return AggregateResult.builder()

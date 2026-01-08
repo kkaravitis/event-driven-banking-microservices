@@ -1,5 +1,6 @@
 package com.wordpress.kkaravitis.banking.transfer.application;
 
+import com.wordpress.kkaravitis.banking.idempotency.inbox.InboxService;
 import com.wordpress.kkaravitis.banking.transfer.TransferService;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.cancellation.TransferCancellationSagaOrchestrator;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.TransferExecutionSagaOrchestrator;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class TransferServiceImpl implements TransferService {
 
+    private final InboxService inboxService;
     private final TransferExecutionSagaOrchestrator transferExecutionSagaOrchestrator;
     private final TransferCancellationSagaOrchestrator transferCancellationSagaOrchestrator;
 
@@ -28,11 +30,15 @@ public class TransferServiceImpl implements TransferService {
 
     @Transactional(isolation = Isolation.REPEATABLE_READ)
     public void handleTransferCancellationParticipantReply(SagaParticipantReply reply) {
-        transferExecutionSagaOrchestrator.onReply(reply);
+        if (inboxService.validateAndStore(reply.messageId())) {
+            transferExecutionSagaOrchestrator.onReply(reply);
+        }
     }
 
     @Transactional(isolation = Isolation.REPEATABLE_READ)
     public void handleTransferExecutionParticipantReply(SagaParticipantReply reply) {
-        transferCancellationSagaOrchestrator.onReply(reply);
+        if (inboxService.validateAndStore(reply.messageId())) {
+            transferCancellationSagaOrchestrator.onReply(reply);
+        }
     }
 }

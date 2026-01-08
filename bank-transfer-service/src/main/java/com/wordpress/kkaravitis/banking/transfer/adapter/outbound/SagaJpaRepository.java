@@ -1,4 +1,4 @@
-package com.wordpress.kkaravitis.banking.transfer.adapter.outbound.db;
+package com.wordpress.kkaravitis.banking.transfer.adapter.outbound;
 
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaEntity;
 import java.util.UUID;

@@ -5,12 +5,18 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@Getter
 @Entity
 @Table(name = "saga")
+@EqualsAndHashCode(of = "sagaId")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SagaEntity {
 
     @Id
@@ -32,8 +38,6 @@ public class SagaEntity {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    protected SagaEntity() { }
-
     public SagaEntity(UUID sagaId,
           String sagaType,
           String sagaState,
@@ -51,27 +55,8 @@ public class SagaEntity {
         this.updatedAt = Instant.now();
     }
 
-    public UUID getSagaId() {
-        return sagaId;
-    }
-
-    public String getSagaType() {
-        return sagaType;
-    }
-
-    public String getSagaState() {
-        return sagaState;
-    }
-
-    public void setSagaState(String sagaState) {
+    public void update(String sagaState, String sagaDataJson) {
         this.sagaState = sagaState;
-    }
-
-    public String getSagaDataJson() {
-        return sagaDataJson;
-    }
-
-    public void setSagaDataJson(String sagaDataJson) {
         this.sagaDataJson = sagaDataJson;
     }
 }

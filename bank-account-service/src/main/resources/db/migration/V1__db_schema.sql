@@ -17,8 +17,8 @@ CREATE TABLE funds_reservation (
     amount              NUMERIC(19,4) NOT NULL,
     currency            VARCHAR(3)    NOT NULL,
     status              VARCHAR(32)   NOT NULL,
-    created_at          TIMESTAMP     NOT NULL,
-    updated_at          TIMESTAMP     NOT NULL,
+    created_at          TIMESTAMPTZ     NOT NULL,
+    updated_at          TIMESTAMPTZ     NOT NULL,
     version             BIGINT        NOT NULL DEFAULT 0,
 
     CONSTRAINT pk_funds_reservation PRIMARY KEY (reservation_id),
@@ -50,13 +50,4 @@ CREATE TABLE aborted_transfer (
     reason       TEXT       NULL,
 
     CONSTRAINT pk_aborted_transfer PRIMARY KEY (transfer_id)
-);
-
-CREATE TABLE outbox_message (
-    message_id         VARCHAR(255)   PRIMARY KEY,
-    correlation_id     UUID           NOT NULL,
-    message_type       VARCHAR(255)   NOT NULL,
-    payload            JSONB          NOT NULL,
-    destination_topic  VARCHAR(255)   NOT NULL,
-    created_at         TIMESTAMPZ     NOT NULL DEFAULT NOW()
 );
