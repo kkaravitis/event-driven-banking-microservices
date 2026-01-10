@@ -1,6 +1,5 @@
 package com.wordpress.kkaravitis.banking.outbox;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -15,8 +14,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 /**
  * Outbox message stored as part of the application's business transaction.
@@ -33,25 +30,25 @@ import org.hibernate.type.SqlTypes;
 public class OutboxMessage {
 
     @Id
-    @Column(name = "message_id", nullable = false, updatable = false, length = 255)
+    @Column(name = "message_id", nullable = false, updatable = false)
     private String messageId;
 
-    @Column(name = "destination_topic", nullable = false, length = 255)
+    @Column(name = "destination_topic", nullable = false)
     private String destinationTopic;
 
     @Column(name = "payload", nullable = false)
     private String payload;
 
-    @Column(name = "aggregate_type", nullable = false, length = 255)
+    @Column(name = "aggregate_type", nullable = false)
     private String aggregateType;
 
     @Column(name = "aggregate_id", nullable = false)
     private UUID aggregateId;
 
-    @Column(name = "message_type", nullable = false, length = 255)
+    @Column(name = "message_type", nullable = false)
     private String messageType;
 
-    @Column(name = "reply_topic", length = 255)
+    @Column(name = "reply_topic")
     private String replyTopic;
 
     @Column(name = "created_at", nullable = false, updatable = false)

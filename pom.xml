@@ -85,15 +85,38 @@
                 <artifactId>transactional-outbox-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.wordpress.kkaravitis</groupId>
+                <artifactId>bank-transfer-service-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.wordpress.kkaravitis</groupId>
+                <artifactId>bank-account-service-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.wordpress.kkaravitis</groupId>
+                <artifactId>anti-fraud-service-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.wordpress.kkaravitis</groupId>
+                <artifactId>common-lib</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <modules>
         <module>anti-fraud-service</module>
+        <module>anti-fraud-service-api</module>
         <module>bank-account-service</module>
+        <module>bank-account-service-api</module>
         <module>bank-transfer-service</module>
         <module>idempotency-inbox-spring-boot-starter</module>
         <module>transactional-outbox-spring-boot-starter</module>
+        <module>common-lib</module>
     </modules>
 
 </project>

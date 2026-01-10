@@ -29,14 +29,14 @@ public class TransferServiceImpl implements TransferService {
     }
 
     @Transactional(isolation = Isolation.REPEATABLE_READ)
-    public void handleTransferCancellationParticipantReply(SagaParticipantReply reply) {
+    public void handleTransferExecutionParticipantReply(SagaParticipantReply reply) {
         if (inboxService.validateAndStore(reply.messageId())) {
             transferExecutionSagaOrchestrator.onReply(reply);
         }
     }
 
     @Transactional(isolation = Isolation.REPEATABLE_READ)
-    public void handleTransferExecutionParticipantReply(SagaParticipantReply reply) {
+    public void handleTransferCancellationParticipantReply(SagaParticipantReply reply) {
         if (inboxService.validateAndStore(reply.messageId())) {
             transferCancellationSagaOrchestrator.onReply(reply);
         }

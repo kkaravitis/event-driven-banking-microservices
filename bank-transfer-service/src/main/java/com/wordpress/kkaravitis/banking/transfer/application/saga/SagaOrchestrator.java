@@ -2,6 +2,7 @@ package com.wordpress.kkaravitis.banking.transfer.application.saga;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wordpress.kkaravitis.banking.common.BankingEventType;
 import com.wordpress.kkaravitis.banking.outbox.TransactionalOutbox;
 import com.wordpress.kkaravitis.banking.outbox.TransactionalOutbox.TransactionalOutboxContext;
 import com.wordpress.kkaravitis.banking.transfer.application.ports.SagaStore;
@@ -43,30 +44,24 @@ public abstract class SagaOrchestrator<T extends Enum<T>, S extends SagaStepHand
 
     protected void handleReply(SagaReplyHandlerContext<T> context) {
         UUID sagaId = sagaId(context);
-
         SagaEntity sagaEntity = loadSagaOrThrow(sagaId);
-
         SagaData<T> sagaData = parseSagaDataOrThrow(sagaEntity, context);
-
-        SagaStepHandler<T> handler = handlersByStatus.get(sagaData.getStatus());
+        T currentSagaStatus = sagaData.getStatus();
+        SagaStepHandler<T> handler = handlersByStatus.get(currentSagaStatus);
         if (handler == null) {
             return;
         }
-
-        final SagaEvent event = toEvent(context);
-
-        validateTransferId(event, sagaData);
-
-        Transfer transfer = loadTransferOrFailSaga(sagaEntity, sagaData).orElse(null);
-        if (transfer == null) {
+        Optional<Transfer> optionalTransfer = loadTransferOrFailSaga(sagaEntity, sagaData);
+        if (optionalTransfer.isEmpty()) {
             return;
         }
-
+        final Object event = toEvent(context);
+        Transfer transfer = optionalTransfer.get();
         handler.handle(stepContext(event, sagaData, transfer))
               .ifPresent(result -> applyResult(context, sagaId, sagaEntity, transfer, result));
     }
 
-    protected abstract SagaEvent toDomainEvent(String messageType, String payloadJson);
+    protected abstract List<BankingEventType> expectedBankingEventTypes();
 
     protected abstract T getSagaFailedStatus();
 
@@ -96,15 +91,21 @@ public abstract class SagaOrchestrator<T extends Enum<T>, S extends SagaStepHand
         return transfer;
     }
 
-    private void validateTransferId(SagaEvent event, SagaData<T> sagaData) {
-        UUID expected = sagaData.getTransferId();
-        if (event.getTransferId() == null || !event.getTransferId().equals(expected)) {
-            throw new SagaRuntimeException("Invalid transferId inside saga event. Transfer id should be " + expected);
+    private Object toEvent(SagaReplyHandlerContext<T> context) {
+        Optional<BankingEventType> matchingEventType = expectedBankingEventTypes().stream()
+              .filter(e -> e.getMessageType()
+                    .equals(context.getMessageType()))
+              .findFirst();
+        if(matchingEventType.isEmpty()) {
+            throw new SagaRuntimeException("Unexpected or Unknown reply type: " + context.getMessageType());
         }
-    }
-
-    private SagaEvent toEvent(SagaReplyHandlerContext<T> context) {
-        return toDomainEvent(context.getMessageType(), context.getPayloadJson());
+        BankingEventType eventType = matchingEventType.get();
+        try {
+            return objectMapper.readValue(context.getPayloadJson(),
+                  eventType.getPayloadType());
+        } catch (JsonProcessingException exception) {
+            throw new SagaRuntimeException(exception);
+        }
     }
 
     private SagaData<T> parseSagaDataOrThrow(SagaEntity sagaEntity, SagaReplyHandlerContext<T> context) {
@@ -134,18 +135,19 @@ public abstract class SagaOrchestrator<T extends Enum<T>, S extends SagaStepHand
               .ifPresent(cmd -> enqueueCommand(context, sagaId, cmd));
     }
 
-    private void enqueueCommand(SagaReplyHandlerContext<T> context, UUID sagaId, SagaParticipantCommand cmd) {
+    private void enqueueCommand(SagaReplyHandlerContext<T> context, UUID sagaId,
+          SagaParticipantCommand command) {
         transactionalOutbox.enqueue(TransactionalOutboxContext.builder()
-              .destinationTopic(cmd.getDestinationTopic())
-              .payload(cmd.getPayload())
+              .destinationTopic(command.getDestinationTopic())
+              .payload(command.getPayload())
               .aggregateType(context.getSagaType())
               .aggregateId(sagaId)
-              .messageType(cmd.getMessageType())
+              .messageType(command.getMessageType())
               .replyTopic(context.getSagaReplyTopic())
               .build());
     }
 
-    private SagaStepHandlerContext<T> stepContext(SagaEvent event, SagaData<T> sagaData, Transfer transfer) {
+    private SagaStepHandlerContext<T> stepContext(Object event, SagaData<T> sagaData, Transfer transfer) {
         return SagaStepHandlerContext.<T>builder()
               .event(event)
               .sagaData(sagaData)

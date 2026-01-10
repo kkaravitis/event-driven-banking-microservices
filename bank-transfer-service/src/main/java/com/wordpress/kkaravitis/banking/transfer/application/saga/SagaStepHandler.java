@@ -14,7 +14,7 @@ public interface SagaStepHandler<T extends Enum<T>> {
     @Getter
     @Builder
     class SagaStepHandlerContext<T extends Enum<T>> {
-        private SagaEvent event;
+        private Object event;
         private SagaData<T> sagaData;
         private Transfer transfer;
     }

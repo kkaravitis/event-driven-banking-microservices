@@ -1,7 +1,10 @@
 package com.wordpress.kkaravitis.banking.transfer.application.saga.execution;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wordpress.kkaravitis.banking.account.api.events.AccountEventType;
+import com.wordpress.kkaravitis.banking.antifraud.api.commands.CheckFraudCommand;
+import com.wordpress.kkaravitis.banking.antifraud.api.events.FraudEventType;
+import com.wordpress.kkaravitis.banking.common.BankingEventType;
 import com.wordpress.kkaravitis.banking.outbox.TransactionalOutbox;
 import com.wordpress.kkaravitis.banking.outbox.TransactionalOutbox.TransactionalOutboxContext;
 import com.wordpress.kkaravitis.banking.transfer.TransferService.InitiateTransferCommand;
@@ -9,18 +12,8 @@ import com.wordpress.kkaravitis.banking.transfer.TransferService.SagaParticipant
 import com.wordpress.kkaravitis.banking.transfer.application.ports.SagaStore;
 import com.wordpress.kkaravitis.banking.transfer.application.ports.TransferStore;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaEntity;
-import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaEvent;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaOrchestrator;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaReplyHandlerContext;
-import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaRuntimeException;
-import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.commands.CheckFraudCommand;
-import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.events.FraudApprovedEvent;
-import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.events.FraudRejectedEvent;
-import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.events.FundsReleasedEvent;
-import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.events.FundsReservationFailedEvent;
-import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.events.FundsReservedEvent;
-import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.events.TransferApprovalFailedEvent;
-import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.events.TransferFinalizedEvent;
 import com.wordpress.kkaravitis.banking.transfer.domain.AggregateResult;
 import com.wordpress.kkaravitis.banking.transfer.domain.Transfer;
 import com.wordpress.kkaravitis.banking.transfer.domain.Transition;
@@ -33,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<TransferExecutionSagaStatus, TransferExecutionSagaStepHandler> {
+    private static final String TRANSFER_EXECUTION_SAGA = "TransferExecutionSaga";
 
     private final Topics topics;
 
@@ -63,7 +57,6 @@ public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<Transfer
         transferStore.save(transfer);
 
         TransferExecutionSagaData sagaData = TransferExecutionSagaData.builder()
-              .sagaId(sagaId)
               .transferId(transferId)
               .customerId(command.getCustomerId())
               .fromAccountId(command.getFromAccountId())
@@ -75,7 +68,7 @@ public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<Transfer
         String sagaDataJson = writeJson(sagaData);
         SagaEntity sagaEntity = new SagaEntity(
               sagaId,
-              "InternalTransferSaga",
+              TRANSFER_EXECUTION_SAGA,
               sagaData.getStatus().name(),
               sagaDataJson
         );
@@ -92,9 +85,9 @@ public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<Transfer
 
         transactionalOutbox.enqueue(TransactionalOutboxContext.builder()
               .aggregateId(sagaId)
-              .aggregateType("TransferExecutionSaga")
+              .aggregateType(TRANSFER_EXECUTION_SAGA)
               .destinationTopic(topics.antiFraudServiceCommandsTopic())
-              .messageType("CheckFraudCommand")
+              .messageType(CheckFraudCommand.MESSAGE_TYPE)
               .payload(checkFraudCommand)
               .replyTopic(topics.transferExecutionSagaRepliesTopic())
               .build());
@@ -112,34 +105,24 @@ public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<Transfer
               .messageType(reply.messageType())
               .payloadJson(reply.payloadJson())
               .sagaDataType(TransferExecutionSagaData.class)
-              .sagaType("TransferExecutionSaga")
+              .sagaType(TRANSFER_EXECUTION_SAGA)
               .sagaReplyTopic(topics.transferExecutionSagaRepliesTopic())
               .build());
     }
 
-    protected SagaEvent toDomainEvent(String messageType, String payloadJson) {
-        try{
-            return switch (messageType) {
-                case "FraudApproved" ->
-                      objectMapper.readValue(payloadJson, FraudApprovedEvent.class);
-                case "FraudRejected" ->
-                      objectMapper.readValue(payloadJson, FraudRejectedEvent.class);
-                case "FundsReserved" ->
-                      objectMapper.readValue(payloadJson, FundsReservedEvent.class);
-                case "FundsReservationFailed" ->
-                      objectMapper.readValue(payloadJson, FundsReservationFailedEvent.class);
-                case "TransferFinalized" ->
-                      objectMapper.readValue(payloadJson, TransferFinalizedEvent.class);
-                case "TransferApprovalFailed" ->
-                      objectMapper.readValue(payloadJson, TransferApprovalFailedEvent.class);
-                case "FundsReleased" ->
-                      objectMapper.readValue(payloadJson, FundsReleasedEvent.class);
-                default ->
-                      throw new SagaRuntimeException("Unknown reply type: " + messageType);
-            };
-        } catch (JsonProcessingException exception) {
-            throw new SagaRuntimeException(exception);
-        }
+    @Override
+    protected List<BankingEventType> expectedBankingEventTypes() {
+        return List.of(
+              FraudEventType.FRAUD_APPROVED,
+              FraudEventType.FRAUD_REJECTED,
+              AccountEventType.FUNDS_RESERVED,
+              AccountEventType.FUNDS_RESERVATION_FAILED,
+              AccountEventType.TRANSFER_FINALIZED,
+              AccountEventType.TRANSFER_APPROVAL_FAILED,
+              AccountEventType.FUNDS_RELEASED,
+              AccountEventType.FUNDS_RELEASE_FAILED_DUE_TO_CANCEL,
+              AccountEventType.FUNDS_RESERVATION_FAILED_DUE_TO_CANCEL,
+              AccountEventType.TRANSFER_APPROVAL_FAILED_DUE_TO_CANCEL);
     }
 
     @Override

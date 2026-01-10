@@ -106,6 +106,14 @@
             <artifactId>transactional-outbox-spring-boot-starter</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.wordpress.kkaravitis</groupId>
+            <artifactId>bank-account-service-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.wordpress.kkaravitis</groupId>
+            <artifactId>anti-fraud-service-api</artifactId>
+        </dependency>
 
     </dependencies>
 

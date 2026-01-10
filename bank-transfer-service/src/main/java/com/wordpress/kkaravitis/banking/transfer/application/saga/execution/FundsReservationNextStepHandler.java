@@ -1,0 +1,81 @@
+package com.wordpress.kkaravitis.banking.transfer.application.saga.execution;
+
+import com.wordpress.kkaravitis.banking.account.api.commands.FinalizeTransferCommand;
+import com.wordpress.kkaravitis.banking.account.api.events.FundsReservationFailedDueToCancelEvent;
+import com.wordpress.kkaravitis.banking.account.api.events.FundsReservationFailedEvent;
+import com.wordpress.kkaravitis.banking.account.api.events.FundsReservedEvent;
+import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaParticipantCommand;
+import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaStepResult;
+import com.wordpress.kkaravitis.banking.transfer.domain.AggregateResult;
+import com.wordpress.kkaravitis.banking.transfer.domain.DomainError;
+import com.wordpress.kkaravitis.banking.transfer.domain.DomainErrorCode;
+import com.wordpress.kkaravitis.banking.transfer.infrastructure.kafka.Topics;
+import java.util.Optional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+@RequiredArgsConstructor
+@Service
+public class FundsReservationNextStepHandler implements TransferExecutionSagaStepHandler {
+    private final Topics topics;
+
+    @Override
+    public TransferExecutionSagaStatus currentSagaStatus() {
+        return TransferExecutionSagaStatus.FUNDS_RESERVATION_PENDING;
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    @Override
+    public Optional<SagaStepResult<TransferExecutionSagaStatus>> handle(SagaStepHandlerContext<TransferExecutionSagaStatus> context) {
+        if (context.getEvent() instanceof FundsReservedEvent) {
+            return handleFundsReservedEvent(context);
+        } else if (context.getEvent() instanceof FundsReservationFailedEvent) {
+            return rejectTransfer(context);
+        } else if (context.getEvent() instanceof FundsReservationFailedDueToCancelEvent) {
+            return cancelSaga((TransferExecutionSagaData) context.getSagaData());
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<SagaStepResult<TransferExecutionSagaStatus>> handleFundsReservedEvent(
+          SagaStepHandlerContext<TransferExecutionSagaStatus> context) {
+
+        final FundsReservedEvent event = (FundsReservedEvent)context.getEvent();
+        final TransferExecutionSagaData sagaData = (TransferExecutionSagaData) context.getSagaData();
+
+        AggregateResult aggregateResult = context.getTransfer().startCompletion(event.getReservationId());
+
+        if (aggregateResult.isValid()) {
+            return Optional.of(SagaStepResult.
+                  <TransferExecutionSagaStatus>builder()
+                  .sagaData(sagaData.withReservationId(event.getReservationId())
+                        .withStatus(TransferExecutionSagaStatus.FINALIZATION_PENDING))
+                  .sagaParticipantCommand(SagaParticipantCommand.builder()
+                        .destinationTopic(topics.accountsServiceCommandsTopic())
+                        .messageType(FinalizeTransferCommand.MESSAGE_TYPE)
+                        .payload(FinalizeTransferCommand.builder()
+                              .reservationId(event.getReservationId())
+                              .customerId(sagaData.getCustomerId())
+                              .transferId(sagaData.getTransferId())
+                              .build())
+                        .build())
+                  .build());
+        } else {
+            TransferExecutionSagaStatus newSagaStatus;
+            DomainError domainError = aggregateResult.getError();
+            if (domainError.code() == DomainErrorCode.COMPLETE_TOO_LATE) {
+                newSagaStatus = TransferExecutionSagaStatus.CANCELLED_BY_CANCEL_SAGA;
+            } else {
+                newSagaStatus = TransferExecutionSagaStatus.FAILED;
+            }
+            return Optional.of(SagaStepResult.
+                  <TransferExecutionSagaStatus>builder()
+                  .sagaData(sagaData
+                        .withStatus(newSagaStatus))
+                  .build());
+        }
+    }
+}

@@ -11,7 +11,6 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
@@ -98,217 +97,103 @@ public class Transfer {
 
     public AggregateResult startCompletion(String fundsReservationId) {
         TransferState currentState = state;
+        return switch (currentState) {
+            case REQUESTED -> {
+                this.fundsReservationId = fundsReservationId;
+                state = TransferState.COMPLETION_PENDING;
+                yield success(currentState);
+            }
 
-        if (currentState == TransferState.REQUESTED) {
-            this.fundsReservationId = fundsReservationId;
-            state = TransferState.COMPLETION_PENDING;
+            case COMPLETION_PENDING -> success(currentState);
 
-            return AggregateResult.builder()
-                  .aggregateId(id)
-                  .transition(new Transition(currentState.name(),
-                        state.name()))
-                  .build();
-        }
+            case CANCEL_PENDING, CANCELLED ->
+                  transitionError(DomainErrorCode.COMPLETE_TOO_LATE, TransferState.COMPLETION_PENDING);
 
-        if (currentState == TransferState.COMPLETION_PENDING) {
+            case COMPLETED, REJECTED ->
+                  transitionError(DomainErrorCode.UNEXPECTED_TRANSITION, TransferState.COMPLETION_PENDING);
 
-            return AggregateResult.builder()
-                  .aggregateId(id)
-                  .transition(new Transition(currentState.name(),
-                        state.name()))
-                  .build();
-        }
-
-        if (List.of(TransferState.CANCEL_PENDING,
-              TransferState.CANCELLED
-              ).contains(currentState)) {
-
-            return AggregateResult.builder()
-                  .aggregateId(id)
-                  .error(new DomainError(DomainErrorCode.COMPLETE_TOO_LATE,
-                        String.format(TRANSITION_ERROR_TEMPLATE, id,
-                              currentState, TransferState.COMPLETION_PENDING)))
-                  .build();
-        }
-
-        if (List.of(TransferState.COMPLETED,
-                    TransferState.REJECTED)
-              .contains(currentState)) {
-
-            return AggregateResult.builder()
-                  .aggregateId(id)
-                  .error(new DomainError(DomainErrorCode.UNEXPECTED_TRANSITION,
-                        String.format(TRANSITION_ERROR_TEMPLATE, id,
-                              currentState, TransferState.COMPLETION_PENDING)))
-                  .build();
-        }
-
-        return illegalStateError();
+            default -> illegalStateError();
+        };
     }
 
     public AggregateResult markCompleted() {
         TransferState currentState = state;
+        return switch (currentState) {
+            case COMPLETION_PENDING -> {
+                state = TransferState.COMPLETED;
+                yield success(currentState);
+            }
+            case COMPLETED -> success(currentState);
 
-        if (currentState == TransferState.COMPLETION_PENDING) {
-            state = TransferState.COMPLETED;
-            return successfulTransition(currentState);
-        }
+            case CANCELLED, CANCEL_PENDING ->
+                  transitionError(DomainErrorCode.COMPLETE_TOO_LATE, TransferState.COMPLETED);
 
-        if (currentState == TransferState.COMPLETED) {
-            return successfulTransition(currentState);
-        }
+            case REQUESTED, REJECTED ->
+                  transitionError(DomainErrorCode.UNEXPECTED_TRANSITION, TransferState.COMPLETED);
 
-        if (List.of(TransferState.CANCELLED,
-                    TransferState.CANCEL_PENDING)
-              .contains(currentState)) {
-            return transitionError(DomainErrorCode.COMPLETE_TOO_LATE,
-                  TransferState.COMPLETED);
-        }
-
-        if (currentState == TransferState.REQUESTED) {
-            return transitionError(DomainErrorCode.UNEXPECTED_TRANSITION,
-                  TransferState.COMPLETED);
-        }
-
-        if (currentState == TransferState.REJECTED) {
-            return transitionError(DomainErrorCode.UNEXPECTED_TRANSITION,
-                  TransferState.COMPLETED);
-        }
-
-        return illegalStateError();
+            default -> illegalStateError();
+        };
     }
 
     public AggregateResult reject() {
         TransferState currentState = state;
+        return switch(currentState) {
+            case COMPLETION_PENDING, REQUESTED -> {
+                state = TransferState.REJECTED;
+                yield success(currentState);
+            }
 
-        if (List.of(TransferState.COMPLETION_PENDING,
-                    TransferState.REQUESTED)
-              .contains(currentState)) {
-            state = TransferState.REJECTED;
+            case REJECTED -> success(currentState);
 
-            return AggregateResult.builder()
-                  .aggregateId(id)
-                  .transition(new Transition(currentState.name(),
-                        this.state.name()))
-                  .build();
-        }
+            case CANCEL_PENDING, CANCELLED -> transitionError(DomainErrorCode.REJECT_TOO_LATE, TransferState.REJECTED);
 
-        if (currentState == TransferState.REJECTED) {
+            case COMPLETED -> transitionError(DomainErrorCode.UNEXPECTED_TRANSITION, TransferState.REJECTED);
 
-            return AggregateResult.builder()
-                  .aggregateId(id)
-                  .transition(new Transition(currentState.name(),
-                        currentState.name()))
-                  .build();
-        }
-
-        if (List.of(TransferState.CANCEL_PENDING,
-                    TransferState.CANCELLED)
-              .contains(currentState)) {
-
-            return AggregateResult.builder()
-                  .aggregateId(id)
-                  .error(new DomainError(DomainErrorCode.REJECT_TOO_LATE,
-                        String.format(TRANSITION_ERROR_TEMPLATE,
-                              id, currentState, TransferState.REJECTED)))
-                  .build();
-        }
-
-        if (currentState == TransferState.COMPLETED) {
-            return AggregateResult.builder()
-                  .aggregateId(id)
-                  .error(new DomainError(DomainErrorCode.UNEXPECTED_TRANSITION,
-                        String.format(TRANSITION_ERROR_TEMPLATE,
-                              id, currentState, TransferState.REJECTED)))
-                  .build();
-        }
-
-        return illegalStateError();
+            default -> illegalStateError();
+        };
     }
 
     public AggregateResult startCancellation() {
         TransferState currentState = state;
-        if (currentState == TransferState.REQUESTED) {
-            state = TransferState.CANCEL_PENDING;
-            return AggregateResult.builder()
-                  .aggregateId(id)
-                  .transition(new Transition(currentState.name(),
-                        state.name()))
-                  .build();
-        }
+        return switch (currentState) {
+            case REQUESTED -> {
+                state = TransferState.CANCEL_PENDING;
+                yield success(currentState);
+            }
 
-        if (currentState == TransferState.CANCEL_PENDING) {
-            return AggregateResult.builder()
-                  .aggregateId(id)
-                  .transition(new Transition(currentState.name(),
-                        state.name()))
-                  .build();
-        }
+            case CANCEL_PENDING -> success(currentState);
 
-        if (List.of(TransferState.REJECTED,
-                    TransferState.COMPLETED,
-                    TransferState.COMPLETION_PENDING)
-              .contains(currentState)) {
-            return AggregateResult.builder()
-                  .aggregateId(id)
-                  .error(new DomainError(DomainErrorCode.CANCEL_TOO_LATE,
-                        String.format(TRANSITION_ERROR_TEMPLATE, id,
-                              currentState, TransferState.CANCEL_PENDING)))
-                  .build();
-        }
+            case REJECTED, COMPLETED, COMPLETION_PENDING ->
+                  transitionError(DomainErrorCode.CANCEL_TOO_LATE, TransferState.CANCEL_PENDING);
 
-        if (currentState == TransferState.CANCELLED) {
-            return AggregateResult.builder()
-                  .aggregateId(id)
-                  .error(new DomainError(DomainErrorCode.UNEXPECTED_TRANSITION,
-                        String.format(TRANSITION_ERROR_TEMPLATE, id,
-                              currentState, TransferState.CANCEL_PENDING)))
-                  .build();
-        }
+            case CANCELLED ->
+                  transitionError(DomainErrorCode.UNEXPECTED_TRANSITION, TransferState.CANCEL_PENDING);
 
-        return illegalStateError();
+            default -> illegalStateError();
+        };
     }
 
     public AggregateResult markCancelled() {
         TransferState currentState = state;
+        return switch (currentState) {
+            case CANCEL_PENDING -> {
+                state = TransferState.CANCELLED;
+                yield success(currentState);
+            }
 
-        if (currentState == TransferState.CANCEL_PENDING) {
-            state = TransferState.CANCELLED;
-            return AggregateResult.builder()
-                  .aggregateId(id)
-                  .transition(new Transition(currentState.name(),
-                        state.name()))
-                  .build();
-        }
+            case CANCELLED -> success(currentState);
 
-        if (currentState == TransferState.CANCELLED) {
-            return AggregateResult.builder()
-                  .aggregateId(id)
-                  .transition(new Transition(currentState.name(),
-                        state.name()))
-                  .build();
-        }
+            case REQUESTED, REJECTED, COMPLETED, COMPLETION_PENDING ->
+                  transitionError(DomainErrorCode.UNEXPECTED_TRANSITION, TransferState.CANCELLED);
 
-        if (List.of(TransferState.REQUESTED,
-                    TransferState.REJECTED,
-                    TransferState.COMPLETED,
-                    TransferState.COMPLETION_PENDING
-              ).contains(currentState)) {
-            return AggregateResult.builder()
-                  .aggregateId(id)
-                  .error(new DomainError(DomainErrorCode.UNEXPECTED_TRANSITION,
-                        String.format(TRANSITION_ERROR_TEMPLATE,
-                              id, currentState, TransferState.CANCELLED)))
-                  .build();
-        }
-
-        return illegalStateError();
+            default -> illegalStateError();
+        };
     }
 
     private AggregateResult transitionError(DomainErrorCode code, TransferState toState) {
         return AggregateResult.builder()
               .aggregateId(id)
-              .error(new DomainError(DomainErrorCode.COMPLETE_TOO_LATE,
+              .error(new DomainError(code,
                     String.format(TRANSITION_ERROR_TEMPLATE, id,
                           state, toState)))
               .build();
@@ -322,7 +207,7 @@ public class Transfer {
               .build();
     }
 
-    private AggregateResult successfulTransition(TransferState fromState) {
+    private AggregateResult success(TransferState fromState) {
         return AggregateResult.builder()
               .aggregateId(id)
               .transition(new Transition(fromState.name(),

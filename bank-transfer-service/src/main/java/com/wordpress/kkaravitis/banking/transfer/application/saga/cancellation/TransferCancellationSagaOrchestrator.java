@@ -1,6 +1,9 @@
 package com.wordpress.kkaravitis.banking.transfer.application.saga.cancellation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wordpress.kkaravitis.banking.account.api.commands.CancelFundsReservationCommand;
+import com.wordpress.kkaravitis.banking.account.api.events.AccountEventType;
+import com.wordpress.kkaravitis.banking.common.BankingEventType;
 import com.wordpress.kkaravitis.banking.outbox.TransactionalOutbox;
 import com.wordpress.kkaravitis.banking.outbox.TransactionalOutbox.TransactionalOutboxContext;
 import com.wordpress.kkaravitis.banking.transfer.TransferService.InitiateCancellationCommand;
@@ -8,13 +11,8 @@ import com.wordpress.kkaravitis.banking.transfer.TransferService.SagaParticipant
 import com.wordpress.kkaravitis.banking.transfer.application.ports.SagaStore;
 import com.wordpress.kkaravitis.banking.transfer.application.ports.TransferStore;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaEntity;
-import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaEvent;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaOrchestrator;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaReplyHandlerContext;
-import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaRuntimeException;
-import com.wordpress.kkaravitis.banking.transfer.application.saga.cancellation.commands.CancelFundsReservationCommand;
-import com.wordpress.kkaravitis.banking.transfer.application.saga.cancellation.events.FundsReservationCancellationRejectedEvent;
-import com.wordpress.kkaravitis.banking.transfer.application.saga.cancellation.events.FundsReservationCancelledEvent;
 import com.wordpress.kkaravitis.banking.transfer.domain.AggregateResult;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainError;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainErrorCode;
@@ -31,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class TransferCancellationSagaOrchestrator extends SagaOrchestrator<TransferCancellationSagaStatus, TransferCancellationSagaStepHandler> {
 
+    public static final String TRANSFER_CANCELLATION_SAGA = "TransferCancellationSaga";
     private final Topics topics;
 
     public TransferCancellationSagaOrchestrator(
@@ -77,7 +76,7 @@ public class TransferCancellationSagaOrchestrator extends SagaOrchestrator<Trans
         String sagaDataJson = writeJson(sagaData);
         SagaEntity sagaEntity = new SagaEntity(
               sagaId,
-              "TransferCancellationSaga",
+              TRANSFER_CANCELLATION_SAGA,
               sagaData.getStatus().name(),
               sagaDataJson
         );
@@ -89,9 +88,9 @@ public class TransferCancellationSagaOrchestrator extends SagaOrchestrator<Trans
 
         transactionalOutbox.enqueue(TransactionalOutboxContext.builder()
               .aggregateId(sagaId)
-              .aggregateType("TransferCancellationSaga")
+              .aggregateType(TRANSFER_CANCELLATION_SAGA)
               .destinationTopic(topics.accountsServiceCommandsTopic())
-              .messageType("CancelFundsReservation")
+              .messageType(CancelFundsReservationCommand.MESSAGE_TYPE)
               .payload(CancelFundsReservationCommand.builder()
                     .transferId(transferId)
                     .customerId(command.getCustomerId())
@@ -112,24 +111,15 @@ public class TransferCancellationSagaOrchestrator extends SagaOrchestrator<Trans
               .messageType(reply.messageType())
               .payloadJson(reply.payloadJson())
               .sagaDataType(TransferCancellationSagaData.class)
-              .sagaType("TransferCancellationSaga")
-              .sagaReplyTopic("transfer-cancellation-saga-replies")
+              .sagaType(TRANSFER_CANCELLATION_SAGA)
+              .sagaReplyTopic(topics.transferCancellationSagaRepliesTopic())
               .build());
     }
 
-    protected SagaEvent toDomainEvent(String messageType, String payloadJson) {
-        try {
-            return switch (messageType) {
-                case "FundsReservationCancelled" ->
-                      objectMapper.readValue(payloadJson, FundsReservationCancelledEvent.class);
-                case "FundsReservationCancellationRejected" ->
-                      objectMapper.readValue(payloadJson, FundsReservationCancellationRejectedEvent.class);
-                default ->
-                      throw new SagaRuntimeException("Unknown reply type: " + messageType);
-            };
-        } catch (Exception exception) {
-            throw new SagaRuntimeException(exception);
-        }
+    @Override
+    protected List<BankingEventType> expectedBankingEventTypes() {
+        return List.of(AccountEventType.FUNDS_RESERVATION_CANCELLED,
+              AccountEventType.FUNDS_RESERVATION_CANCELLATION_REJECTED);
     }
 
     @Override

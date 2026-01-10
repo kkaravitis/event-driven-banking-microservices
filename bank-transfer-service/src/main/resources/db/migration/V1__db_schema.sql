@@ -20,14 +20,3 @@ CREATE TABLE IF NOT EXISTS saga (
     created_at  TIMESTAMPTZ    NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ    NOT NULL DEFAULT now()
 );
-
-CREATE TABLE outbox_message (
-    message_id         VARCHAR(255)   PRIMARY KEY,
-    destination_topic  VARCHAR(255)   NOT NULL,
-    payload            JSONB          NOT NULL,
-    aggregate_type     VARCHAR(255)   NOT NULL,
-    aggregate_id       UUID           NOT NULL,
-    message_type       VARCHAR(255)   NOT NULL,
-    reply_topic        VARCHAR(255)   NULL,
-    created_at         TIMESTAMPTZ     NOT NULL DEFAULT NOW()
-);
