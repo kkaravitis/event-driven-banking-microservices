@@ -20,7 +20,7 @@ public abstract class SagaOrchestrator<T extends Enum<T>, S extends SagaStepHand
     protected final SagaStore sagaStore;
     protected final TransferStore transferStore;
     protected final ObjectMapper objectMapper;
-    protected final Map<T, SagaStepHandler<T>> handlersByStatus;
+    protected final Map<T, S> handlersByStatus;
     protected final TransactionalOutbox transactionalOutbox;
 
     protected SagaOrchestrator(SagaStore sagaStore,
