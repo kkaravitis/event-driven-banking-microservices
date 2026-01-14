@@ -1,4 +1,4 @@
-package com.wordpress.kkaravitis.banking.account.domain.types;
+package com.wordpress.kkaravitis.banking.account.domain;
 
 public enum ReservationStatus {
     ACTIVE,

@@ -1,4 +1,4 @@
-package com.wordpress.kkaravitis.banking.account.domain.repo;
+package com.wordpress.kkaravitis.banking.account.domain;
 
 import com.wordpress.kkaravitis.banking.account.domain.Account;
 import org.springframework.data.jpa.repository.JpaRepository;

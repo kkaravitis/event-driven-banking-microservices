@@ -92,8 +92,7 @@ public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<Transfer
               .build());
 
         return DomainResult.builder()
-              .transition(new Transition(null,
-                    transfer.getState().name()))
+              .transferId(transferId)
               .build();
     }
 

@@ -10,7 +10,6 @@ public class AccountCommand {
     private final String messageType;
     private final String messageId;
     private final String message;
-    private final UUID aggregateId;
-    private final String aggregateType;
+    private final UUID correlationId;
     private final String replyTopic;
 }

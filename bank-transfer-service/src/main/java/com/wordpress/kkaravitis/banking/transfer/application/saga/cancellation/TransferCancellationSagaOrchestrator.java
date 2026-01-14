@@ -98,8 +98,7 @@ public class TransferCancellationSagaOrchestrator extends SagaOrchestrator<Trans
               .build());
 
         return DomainResult.builder()
-              .transition(new Transition(null,
-                    transfer.getState().name()))
+              .transferId(transferId)
               .build();
     }
 

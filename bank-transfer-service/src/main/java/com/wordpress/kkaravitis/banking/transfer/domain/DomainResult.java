@@ -7,15 +7,11 @@ import lombok.Getter;
 @Builder
 @Getter
 public class DomainResult {
-
-    private final UUID aggregateId;
-
-    private final Transition transition;
+    private final UUID transferId;
 
     private final DomainError error;
 
     public boolean isValid() {
         return error == null;
     }
-
 }

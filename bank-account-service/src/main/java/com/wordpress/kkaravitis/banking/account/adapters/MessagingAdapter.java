@@ -1,5 +1,10 @@
 package com.wordpress.kkaravitis.banking.account.adapters;
 
+import static com.wordpress.kkaravitis.banking.common.MessagingContractUtils.CORRELATION_ID_HEADER;
+import static com.wordpress.kkaravitis.banking.common.MessagingContractUtils.MESSAGE_ID_HEADER;
+import static com.wordpress.kkaravitis.banking.common.MessagingContractUtils.MESSAGE_TYPE_HEADER;
+import static com.wordpress.kkaravitis.banking.common.MessagingContractUtils.REPLY_TOPIC_HEADER;
+
 import com.wordpress.kkaravitis.banking.account.application.AccountCommand;
 import com.wordpress.kkaravitis.banking.account.application.AccountCommandHandlerService;
 import java.util.UUID;
@@ -12,28 +17,21 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Component
 public class MessagingAdapter {
-    private static final String MESSAGE_ID_HEADER = "x-message-id";
-    private static final String AGGREGATE_ID_HEADER = "x-aggregate-id";
-    private static final String AGGREGATE_TYPE_HEADER = "x-aggregate-type";
-    private static final String MESSAGE_TYPE_HEADER = "x-message-type";
-    private static final String REPLY_TOPIC_HEADER = "x-reply-topic";
 
     private final AccountCommandHandlerService accountCommandHandlerService;
 
     @KafkaListener(topics = "${app.kafka.account-commands-topic}")
     public void handleAccountCommand(
           @Header(MESSAGE_ID_HEADER) String messageId,
-          @Header(AGGREGATE_ID_HEADER) String aggregateId,
+          @Header(CORRELATION_ID_HEADER) String correlationId,
           @Header(MESSAGE_TYPE_HEADER) String messageType,
           @Header(REPLY_TOPIC_HEADER) String replyTopic,
-          @Header(AGGREGATE_TYPE_HEADER) String aggregateType,
           @Payload String payload) {
         accountCommandHandlerService.handle(AccountCommand.builder()
                     .message(payload)
                     .messageType(messageType)
                     .messageId(messageId)
-                    .aggregateId(UUID.fromString(aggregateId))
-                    .aggregateType(aggregateType)
+                    .correlationId(UUID.fromString(correlationId))
                     .replyTopic(replyTopic)
               .build());
     }

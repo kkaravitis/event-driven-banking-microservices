@@ -1,9 +1,5 @@
 package com.wordpress.kkaravitis.banking.account.domain;
 
-import com.wordpress.kkaravitis.banking.account.domain.types.ReleaseReason;
-import com.wordpress.kkaravitis.banking.account.domain.types.ReservationStatus;
-import com.wordpress.kkaravitis.banking.account.domain.values.DomainErrorCode;
-import com.wordpress.kkaravitis.banking.account.domain.values.DomainResult;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

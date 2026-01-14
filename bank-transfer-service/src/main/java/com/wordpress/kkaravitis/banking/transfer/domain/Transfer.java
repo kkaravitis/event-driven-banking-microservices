@@ -192,7 +192,7 @@ public class Transfer {
 
     private DomainResult transitionError(DomainErrorCode code, TransferState toState) {
         return DomainResult.builder()
-              .aggregateId(id)
+              .transferId(id)
               .error(new DomainError(code,
                     String.format(TRANSITION_ERROR_TEMPLATE, id,
                           state, toState)))
@@ -201,7 +201,7 @@ public class Transfer {
 
     private DomainResult illegalStateError() {
         return DomainResult.builder()
-              .aggregateId(id)
+              .transferId(id)
               .error(new DomainError(DomainErrorCode.ILLEGAL_STATE, String
                     .format(ILLEGAL_STATE_ERROR_TEMPLATE, id, state)))
               .build();
@@ -209,9 +209,7 @@ public class Transfer {
 
     private DomainResult success(TransferState fromState) {
         return DomainResult.builder()
-              .aggregateId(id)
-              .transition(new Transition(fromState.name(),
-                    state.name()))
+              .transferId(id)
               .build();
     }
 

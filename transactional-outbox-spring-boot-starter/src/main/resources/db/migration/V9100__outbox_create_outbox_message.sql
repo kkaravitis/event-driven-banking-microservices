@@ -1,7 +1,7 @@
 -- Outbox table for the transactional outbox pattern (PostgreSQL)
 
 CREATE TABLE IF NOT EXISTS outbox_message (
-    message_id         UUID  PRIMARY KEY,
+    message_id         UUID          PRIMARY KEY,
     destination_topic  VARCHAR(255)  NOT NULL,
     payload            JSONB         NOT NULL,
     correlation_id     UUID          NOT NULL,

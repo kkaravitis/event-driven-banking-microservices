@@ -1,4 +1,4 @@
-package com.wordpress.kkaravitis.banking.account.domain.values;
+package com.wordpress.kkaravitis.banking.account.domain;
 
 public enum DomainErrorCode {
     INVALID_AMOUNT,

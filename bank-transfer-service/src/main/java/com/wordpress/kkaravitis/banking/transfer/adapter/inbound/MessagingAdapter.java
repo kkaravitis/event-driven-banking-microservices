@@ -1,5 +1,9 @@
 package com.wordpress.kkaravitis.banking.transfer.adapter.inbound;
 
+import static com.wordpress.kkaravitis.banking.common.MessagingContractUtils.CORRELATION_ID_HEADER;
+import static com.wordpress.kkaravitis.banking.common.MessagingContractUtils.MESSAGE_ID_HEADER;
+import static com.wordpress.kkaravitis.banking.common.MessagingContractUtils.MESSAGE_TYPE_HEADER;
+
 import com.wordpress.kkaravitis.banking.transfer.TransferService;
 import com.wordpress.kkaravitis.banking.transfer.TransferService.SagaParticipantReply;
 import lombok.RequiredArgsConstructor;
@@ -11,21 +15,17 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Component
 public class MessagingAdapter {
-    private static final String MESSAGE_ID_HEADER = "x-message-id";
-    private static final String AGGREGATE_ID_HEADER = "x-aggregate-id";
-    private static final String MESSAGE_TYPE_HEADER = "x-message-type";
-
     private final TransferService transferService;
 
     @KafkaListener(topics = "${app.kafka.transfer-execution-saga-replies-topic}")
     public void handleExecutionSagaReplies(
           @Header(MESSAGE_ID_HEADER) String messageId,
-          @Header(AGGREGATE_ID_HEADER) String aggregateId,
+          @Header(CORRELATION_ID_HEADER) String correlationId,
           @Header(MESSAGE_TYPE_HEADER) String messageType,
           @Payload String payload) {
          transferService.handleTransferExecutionParticipantReply(new SagaParticipantReply(
                   messageId,
-                  aggregateId,
+                  correlationId,
                   messageType,
                   payload
             ));
@@ -34,12 +34,12 @@ public class MessagingAdapter {
     @KafkaListener(topics = "${app.kafka.transfer-cancellation-saga-replies-topic}")
     public void handleCancellationSagaReplies(
           @Header(MESSAGE_ID_HEADER) String messageId,
-          @Header(AGGREGATE_ID_HEADER) String aggregateId,
+          @Header(CORRELATION_ID_HEADER) String correlationId,
           @Header(MESSAGE_TYPE_HEADER) String messageType,
           @Payload String payload) {
             transferService.handleTransferCancellationParticipantReply(new SagaParticipantReply(
                   messageId,
-                  aggregateId,
+                  correlationId,
                   messageType,
                   payload
             ));
