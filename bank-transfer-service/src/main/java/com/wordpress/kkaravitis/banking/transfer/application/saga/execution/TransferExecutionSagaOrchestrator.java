@@ -14,7 +14,7 @@ import com.wordpress.kkaravitis.banking.transfer.application.ports.TransferStore
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaEntity;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaOrchestrator;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaReplyHandlerContext;
-import com.wordpress.kkaravitis.banking.transfer.domain.AggregateResult;
+import com.wordpress.kkaravitis.banking.transfer.domain.DomainResult;
 import com.wordpress.kkaravitis.banking.transfer.domain.Transfer;
 import com.wordpress.kkaravitis.banking.transfer.domain.Transition;
 import com.wordpress.kkaravitis.banking.transfer.infrastructure.kafka.Topics;
@@ -42,7 +42,7 @@ public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<Transfer
     }
 
     @Transactional
-    public AggregateResult start(InitiateTransferCommand command) {
+    public DomainResult start(InitiateTransferCommand command) {
         UUID transferId = UUID.randomUUID();
         UUID sagaId = UUID.randomUUID();
 
@@ -84,15 +84,14 @@ public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<Transfer
               .build();
 
         transactionalOutbox.enqueue(TransactionalOutboxContext.builder()
-              .aggregateId(sagaId)
-              .aggregateType(TRANSFER_EXECUTION_SAGA)
-              .destinationTopic(topics.antiFraudServiceCommandsTopic())
+              .correlationId(sagaId)
               .messageType(CheckFraudCommand.MESSAGE_TYPE)
               .payload(checkFraudCommand)
+              .destinationTopic(topics.antiFraudServiceCommandsTopic())
               .replyTopic(topics.transferExecutionSagaRepliesTopic())
               .build());
 
-        return AggregateResult.builder()
+        return DomainResult.builder()
               .transition(new Transition(null,
                     transfer.getState().name()))
               .build();

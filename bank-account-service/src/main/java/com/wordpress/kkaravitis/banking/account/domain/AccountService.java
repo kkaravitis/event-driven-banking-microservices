@@ -21,8 +21,6 @@ import com.wordpress.kkaravitis.banking.account.domain.repo.FundsReservationRepo
 import com.wordpress.kkaravitis.banking.account.domain.types.ReservationStatus;
 import com.wordpress.kkaravitis.banking.account.domain.values.DomainEvent;
 import com.wordpress.kkaravitis.banking.account.domain.values.DomainResult;
-import com.wordpress.kkaravitis.banking.account.domain.values.FinalizeOutcome;
-import com.wordpress.kkaravitis.banking.account.domain.values.ReleaseOutcome;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -33,6 +31,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class AccountService {
 
+    private static final String TRANSFER_HAD_BEEN_CANCELLED = "Transfer had been cancelled";
+
     private final AccountRepository accountRepository;
     private final FundsReservationRepository reservationRepository;
     private final AbortedTransferRepository abortedTransferRepository;
@@ -40,10 +40,9 @@ public class AccountService {
     public DomainEvent reserveFunds(ReserveFundsCommand command) {
         UUID transferId = command.getTransferId();
 
-
         if (abortedTransferRepository.existsById(transferId)) {
             return toDomainEvent(new FundsReservationFailedDueToCancelEvent(transferId,
-                        "Transfer had been cancelled"));
+                  TRANSFER_HAD_BEEN_CANCELLED));
         }
 
         Optional<FundsReservation> existing = reservationRepository.findByTransferId(transferId);
@@ -56,7 +55,7 @@ public class AccountService {
 
             if (r.isCancelled()) {
                 return toDomainEvent(new FundsReservationFailedDueToCancelEvent(transferId,
-                      "Transfer had been cancelled"));
+                      TRANSFER_HAD_BEEN_CANCELLED));
             }
 
             return toDomainEvent(new FundsReservationFailedEvent(
@@ -77,7 +76,7 @@ public class AccountService {
                   "To account not found"));
         }
 
-        DomainResult<Void> hold = from.reserve(command.getAmount(), command.getCurrency());
+        DomainResult hold = from.reserve(command.getAmount(), command.getCurrency());
         if (!hold.isValid()) {
             return toDomainEvent(new FundsReservationFailedEvent(transferId,
                   hold.getError().message()));
@@ -115,7 +114,7 @@ public class AccountService {
         Account from = accountRepository.findById(reservation.getFromAccountId())
               .orElseThrow(() -> new IllegalStateException("From account not found: " + reservation.getFromAccountId()));
 
-        DomainResult<ReleaseOutcome> result = reservation.release(from);
+        DomainResult result = reservation.release(from);
 
         if (!result.isValid()) {
             // No generic failure event in your contract -> treat as technical
@@ -138,7 +137,7 @@ public class AccountService {
 
         if (abortedTransferRepository.existsById(transferId) || reservation.isCancelled()) {
             return toDomainEvent(new TransferApprovalFailedDueToCancelEvent(transferId,
-                  "Transfer had been cancelled"));
+                  TRANSFER_HAD_BEEN_CANCELLED));
         }
 
         // Idempotent success
@@ -154,7 +153,7 @@ public class AccountService {
                   "Account(s) not found"));
         }
 
-        DomainResult<FinalizeOutcome> result = reservation.finalizeTransfer(from, to);
+        DomainResult result = reservation.finalizeTransfer(from, to);
 
         if (!result.isValid()) {
             return toDomainEvent(new TransferApprovalFailedEvent(transferId,
@@ -184,7 +183,9 @@ public class AccountService {
         if (from == null) {
             return toDomainEvent(new FundsReservationCancellationRejectedEvent(transferId));
         }
-        DomainResult<ReleaseOutcome> result = reservation.cancel(from);
+
+        DomainResult result = reservation.cancel(from);
+
         if (!result.isValid()) {
             return toDomainEvent(new FundsReservationCancellationRejectedEvent(transferId));
         }

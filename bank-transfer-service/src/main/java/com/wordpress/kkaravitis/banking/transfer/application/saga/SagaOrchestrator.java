@@ -138,11 +138,10 @@ public abstract class SagaOrchestrator<T extends Enum<T>, S extends SagaStepHand
     private void enqueueCommand(SagaReplyHandlerContext<T> context, UUID sagaId,
           SagaParticipantCommand command) {
         transactionalOutbox.enqueue(TransactionalOutboxContext.builder()
-              .destinationTopic(command.getDestinationTopic())
-              .payload(command.getPayload())
-              .aggregateType(context.getSagaType())
-              .aggregateId(sagaId)
+              .correlationId(sagaId)
               .messageType(command.getMessageType())
+              .payload(command.getPayload())
+              .destinationTopic(command.getDestinationTopic())
               .replyTopic(context.getSagaReplyTopic())
               .build());
     }

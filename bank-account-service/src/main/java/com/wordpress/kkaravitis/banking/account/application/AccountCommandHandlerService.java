@@ -26,7 +26,9 @@ public class AccountCommandHandlerService {
 
     @Transactional
     public void handle (AccountCommand command) {
-            inboxService.validateAndStore(command.getMessageId());
+            if (!inboxService.validateAndStore(command.getMessageId())) {
+                return;
+            }
             AccountCommandType accountCommandType = AccountCommandType.valueOf(command.getMessageType());
 
             DomainEvent domainEvent = switch (accountCommandType) {
@@ -48,8 +50,7 @@ public class AccountCommandHandlerService {
                   .builder()
                   .messageType(domainEvent.type())
                   .payload(domainEvent.payload())
-                  .aggregateId(command.getAggregateId())
-                  .aggregateType(command.getAggregateType())
+                  .correlationId(command.getAggregateId())
                   .destinationTopic(command.getReplyTopic())
                   .build());
     }

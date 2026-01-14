@@ -31,7 +31,7 @@ public class OutboxMessage {
 
     @Id
     @Column(name = "message_id", nullable = false, updatable = false)
-    private String messageId;
+    private UUID messageId;
 
     @Column(name = "destination_topic", nullable = false)
     private String destinationTopic;
@@ -39,11 +39,8 @@ public class OutboxMessage {
     @Column(name = "payload", nullable = false)
     private String payload;
 
-    @Column(name = "aggregate_type", nullable = false)
-    private String aggregateType;
-
-    @Column(name = "aggregate_id", nullable = false)
-    private UUID aggregateId;
+    @Column(name = "correlation_id", nullable = false)
+    private UUID correlationId;
 
     @Column(name = "message_type", nullable = false)
     private String messageType;

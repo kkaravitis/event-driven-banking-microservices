@@ -95,7 +95,7 @@ public class Transfer {
         this.createdAt = Instant.now();
     }
 
-    public AggregateResult startCompletion(String fundsReservationId) {
+    public DomainResult startCompletion(String fundsReservationId) {
         TransferState currentState = state;
         return switch (currentState) {
             case REQUESTED -> {
@@ -116,7 +116,7 @@ public class Transfer {
         };
     }
 
-    public AggregateResult markCompleted() {
+    public DomainResult markCompleted() {
         TransferState currentState = state;
         return switch (currentState) {
             case COMPLETION_PENDING -> {
@@ -135,7 +135,7 @@ public class Transfer {
         };
     }
 
-    public AggregateResult reject() {
+    public DomainResult reject() {
         TransferState currentState = state;
         return switch(currentState) {
             case COMPLETION_PENDING, REQUESTED -> {
@@ -153,7 +153,7 @@ public class Transfer {
         };
     }
 
-    public AggregateResult startCancellation() {
+    public DomainResult startCancellation() {
         TransferState currentState = state;
         return switch (currentState) {
             case REQUESTED -> {
@@ -173,7 +173,7 @@ public class Transfer {
         };
     }
 
-    public AggregateResult markCancelled() {
+    public DomainResult markCancelled() {
         TransferState currentState = state;
         return switch (currentState) {
             case CANCEL_PENDING -> {
@@ -190,8 +190,8 @@ public class Transfer {
         };
     }
 
-    private AggregateResult transitionError(DomainErrorCode code, TransferState toState) {
-        return AggregateResult.builder()
+    private DomainResult transitionError(DomainErrorCode code, TransferState toState) {
+        return DomainResult.builder()
               .aggregateId(id)
               .error(new DomainError(code,
                     String.format(TRANSITION_ERROR_TEMPLATE, id,
@@ -199,16 +199,16 @@ public class Transfer {
               .build();
     }
 
-    private AggregateResult illegalStateError() {
-        return AggregateResult.builder()
+    private DomainResult illegalStateError() {
+        return DomainResult.builder()
               .aggregateId(id)
               .error(new DomainError(DomainErrorCode.ILLEGAL_STATE, String
                     .format(ILLEGAL_STATE_ERROR_TEMPLATE, id, state)))
               .build();
     }
 
-    private AggregateResult success(TransferState fromState) {
-        return AggregateResult.builder()
+    private DomainResult success(TransferState fromState) {
+        return DomainResult.builder()
               .aggregateId(id)
               .transition(new Transition(fromState.name(),
                     state.name()))

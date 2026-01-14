@@ -4,7 +4,7 @@ import com.wordpress.kkaravitis.banking.idempotency.inbox.InboxService;
 import com.wordpress.kkaravitis.banking.transfer.TransferService;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.cancellation.TransferCancellationSagaOrchestrator;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.TransferExecutionSagaOrchestrator;
-import com.wordpress.kkaravitis.banking.transfer.domain.AggregateResult;
+import com.wordpress.kkaravitis.banking.transfer.domain.DomainResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -19,12 +19,12 @@ public class TransferServiceImpl implements TransferService {
     private final TransferCancellationSagaOrchestrator transferCancellationSagaOrchestrator;
 
     @Transactional
-    public AggregateResult startTransfer(InitiateTransferCommand command) {
+    public DomainResult startTransfer(InitiateTransferCommand command) {
        return transferExecutionSagaOrchestrator.start(command);
     }
 
     @Transactional(isolation = Isolation.REPEATABLE_READ)
-    public AggregateResult startCancellation(InitiateCancellationCommand command) {
+    public DomainResult startCancellation(InitiateCancellationCommand command) {
         return transferCancellationSagaOrchestrator.start(command);
     }
 

@@ -14,11 +14,10 @@ public interface TransactionalOutbox {
     @Builder
     @Getter
     class TransactionalOutboxContext {
-        private final String aggregateType;
-        private final UUID aggregateId;
-        private final String destinationTopic;
+        private final UUID correlationId;
         private final String messageType;
-        private final String replyTopic;
         private final Object payload;
+        private final String destinationTopic;
+        private final String replyTopic;
     }
 }

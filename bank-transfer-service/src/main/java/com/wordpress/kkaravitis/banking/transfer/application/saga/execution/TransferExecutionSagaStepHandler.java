@@ -2,7 +2,7 @@ package com.wordpress.kkaravitis.banking.transfer.application.saga.execution;
 
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaStepHandler;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaStepResult;
-import com.wordpress.kkaravitis.banking.transfer.domain.AggregateResult;
+import com.wordpress.kkaravitis.banking.transfer.domain.DomainResult;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainError;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainErrorCode;
 import java.util.Optional;
@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface TransferExecutionSagaStepHandler extends SagaStepHandler<TransferExecutionSagaStatus> {
 
     default Optional<SagaStepResult<TransferExecutionSagaStatus>> rejectTransfer(SagaStepHandlerContext<TransferExecutionSagaStatus> context) {
-        AggregateResult aggregateResult = context.getTransfer().reject();
+        DomainResult aggregateResult = context.getTransfer().reject();
 
         TransferExecutionSagaStatus newStatus;
         if (aggregateResult.isValid()) {

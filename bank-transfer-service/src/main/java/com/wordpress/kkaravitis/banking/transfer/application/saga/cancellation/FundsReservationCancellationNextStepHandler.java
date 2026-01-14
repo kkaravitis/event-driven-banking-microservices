@@ -3,7 +3,7 @@ package com.wordpress.kkaravitis.banking.transfer.application.saga.cancellation;
 import com.wordpress.kkaravitis.banking.account.api.events.FundsReservationCancellationRejectedEvent;
 import com.wordpress.kkaravitis.banking.account.api.events.FundsReservationCancelledEvent;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaStepResult;
-import com.wordpress.kkaravitis.banking.transfer.domain.AggregateResult;
+import com.wordpress.kkaravitis.banking.transfer.domain.DomainResult;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,7 +24,7 @@ public class FundsReservationCancellationNextStepHandler implements TransferCanc
     public Optional<SagaStepResult<TransferCancellationSagaStatus>> handle(SagaStepHandlerContext<TransferCancellationSagaStatus> context) {
         TransferCancellationSagaData transferCancellationSagaData = (TransferCancellationSagaData) context.getSagaData();
         if (context.getEvent() instanceof FundsReservationCancelledEvent) {
-            AggregateResult aggregateResult = context.getTransfer().markCancelled();
+            DomainResult aggregateResult = context.getTransfer().markCancelled();
             TransferCancellationSagaStatus newStatus;
             if (aggregateResult.isValid()) {
                 newStatus = TransferCancellationSagaStatus.COMPLETED;

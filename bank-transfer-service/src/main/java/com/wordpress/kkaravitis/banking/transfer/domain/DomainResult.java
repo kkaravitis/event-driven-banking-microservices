@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Builder
 @Getter
-public class AggregateResult {
+public class DomainResult {
 
     private final UUID aggregateId;
 

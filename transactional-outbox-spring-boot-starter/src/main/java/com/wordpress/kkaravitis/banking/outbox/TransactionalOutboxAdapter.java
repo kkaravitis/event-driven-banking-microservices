@@ -19,14 +19,12 @@ public class TransactionalOutboxAdapter implements TransactionalOutbox {
     @Transactional(propagation = Propagation.MANDATORY)
     @Override
     public void enqueue(TransactionalOutboxContext context) {
-        String messageId = context.getAggregateType() + "-" + UUID.randomUUID();
         OutboxMessage outboxMessage = OutboxMessage.builder()
-              .messageId(messageId)
-              .destinationTopic(context.getDestinationTopic())
-              .payload(toJson(context.getPayload()))
-              .aggregateType(context.getAggregateType())
-              .aggregateId(context.getAggregateId())
+              .messageId(UUID.randomUUID())
+              .correlationId(context.getCorrelationId())
               .messageType(context.getMessageType())
+              .payload(toJson(context.getPayload()))
+              .destinationTopic(context.getDestinationTopic())
               .replyTopic(context.getReplyTopic())
               .createdAt(Instant.now())
               .build();

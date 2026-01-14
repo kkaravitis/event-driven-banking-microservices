@@ -1,6 +1,6 @@
 package com.wordpress.kkaravitis.banking.transfer;
 
-import com.wordpress.kkaravitis.banking.transfer.domain.AggregateResult;
+import com.wordpress.kkaravitis.banking.transfer.domain.DomainResult;
 import java.math.BigDecimal;
 import java.util.UUID;
 import lombok.Builder;
@@ -8,9 +8,9 @@ import lombok.Getter;
 
 public interface TransferService {
 
-    AggregateResult startTransfer(InitiateTransferCommand command);
+    DomainResult startTransfer(InitiateTransferCommand command);
 
-    AggregateResult startCancellation(InitiateCancellationCommand command);
+    DomainResult startCancellation(InitiateCancellationCommand command);
 
     void handleTransferCancellationParticipantReply(SagaParticipantReply reply);
 

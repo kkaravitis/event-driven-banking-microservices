@@ -13,7 +13,7 @@ import com.wordpress.kkaravitis.banking.transfer.application.ports.TransferStore
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaEntity;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaOrchestrator;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaReplyHandlerContext;
-import com.wordpress.kkaravitis.banking.transfer.domain.AggregateResult;
+import com.wordpress.kkaravitis.banking.transfer.domain.DomainResult;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainError;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainErrorCode;
 import com.wordpress.kkaravitis.banking.transfer.domain.Transfer;
@@ -43,17 +43,17 @@ public class TransferCancellationSagaOrchestrator extends SagaOrchestrator<Trans
         this.topics = topics;
     }
 
-    public AggregateResult start(InitiateCancellationCommand command) {
+    public DomainResult start(InitiateCancellationCommand command) {
         Optional<Transfer> storeResult = transferStore.load(command.getTransferId());
         if (storeResult.isEmpty()) {
-            return AggregateResult.builder()
+            return DomainResult.builder()
                   .error(new DomainError(DomainErrorCode.NOT_EXISTING,
                         String.format("The Transfer entity with id %s was not found during Transfer Cancellation",
                               command.getTransferId())))
                   .build();
         }
         Transfer transfer = storeResult.get();
-        AggregateResult aggregateResult = transfer.startCancellation();
+        DomainResult aggregateResult = transfer.startCancellation();
         TransferCancellationSagaStatus sagaStatus;
         if (aggregateResult.isValid()) {
             sagaStatus = TransferCancellationSagaStatus.CANCEL_PENDING;
@@ -87,18 +87,17 @@ public class TransferCancellationSagaOrchestrator extends SagaOrchestrator<Trans
         }
 
         transactionalOutbox.enqueue(TransactionalOutboxContext.builder()
-              .aggregateId(sagaId)
-              .aggregateType(TRANSFER_CANCELLATION_SAGA)
-              .destinationTopic(topics.accountsServiceCommandsTopic())
+              .correlationId(sagaId)
               .messageType(CancelFundsReservationCommand.MESSAGE_TYPE)
               .payload(CancelFundsReservationCommand.builder()
                     .transferId(transferId)
                     .customerId(command.getCustomerId())
                     .build())
+              .destinationTopic(topics.accountsServiceCommandsTopic())
               .replyTopic(topics.transferCancellationSagaRepliesTopic())
               .build());
 
-        return AggregateResult.builder()
+        return DomainResult.builder()
               .transition(new Transition(null,
                     transfer.getState().name()))
               .build();

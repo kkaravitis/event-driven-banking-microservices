@@ -6,7 +6,7 @@ import com.wordpress.kkaravitis.banking.account.api.events.TransferApprovalFaile
 import com.wordpress.kkaravitis.banking.account.api.events.TransferFinalizedEvent;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaParticipantCommand;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaStepResult;
-import com.wordpress.kkaravitis.banking.transfer.domain.AggregateResult;
+import com.wordpress.kkaravitis.banking.transfer.domain.DomainResult;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainError;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainErrorCode;
 import com.wordpress.kkaravitis.banking.transfer.infrastructure.kafka.Topics;
@@ -50,7 +50,7 @@ public class FinalizationNextStepHandler implements TransferExecutionSagaStepHan
           SagaStepHandlerContext<TransferExecutionSagaStatus> context) {
 
         TransferExecutionSagaStatus newSagaStatus;
-        AggregateResult aggregateResult = context.getTransfer().markCompleted();
+        DomainResult aggregateResult = context.getTransfer().markCompleted();
         if (aggregateResult.isValid()) {
             newSagaStatus = TransferExecutionSagaStatus.COMPLETED;
         } else {

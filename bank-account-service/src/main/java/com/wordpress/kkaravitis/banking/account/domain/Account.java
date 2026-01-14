@@ -38,8 +38,8 @@ public class Account {
     
     // -------- validation helpers (no mutation) --------
 
-    public DomainResult<Void> validateReserve(BigDecimal amount, String currency) {
-        DomainResult<Void> domainResult = validateAmountAndCurrency(amount, currency);
+    public DomainResult validateReserve(BigDecimal amount, String currency) {
+        DomainResult domainResult = validateAmountAndCurrency(amount, currency);
         if (!domainResult.isValid()) {
           return domainResult;
         }
@@ -53,8 +53,8 @@ public class Account {
         return DomainResult.ok();
     }
 
-    public DomainResult<Void> validateReleaseReserved(BigDecimal amount, String currency) {
-        DomainResult<Void> domainResult = validateAmountAndCurrency(amount, currency);
+    public DomainResult validateReleaseReserved(BigDecimal amount, String currency) {
+        DomainResult domainResult = validateAmountAndCurrency(amount, currency);
         if (!domainResult.isValid()) {
             return domainResult;
         }
@@ -68,18 +68,18 @@ public class Account {
         return DomainResult.ok();
     }
 
-    public DomainResult<Void> validateConsumeReserved(BigDecimal amount, String currency) {
+    public DomainResult validateConsumeReserved(BigDecimal amount, String currency) {
         return validateReleaseReserved(amount, currency);
     }
 
-    public DomainResult<Void> validateCredit(BigDecimal amount, String currency) {
+    public DomainResult validateCredit(BigDecimal amount, String currency) {
         return validateAmountAndCurrency(amount, currency);
     }
 
     // -------- mutating operations --------
 
-    public DomainResult<Void> reserve(BigDecimal amount, String currency) {
-        DomainResult<Void> domainResult = validateReserve(amount, currency);
+    public DomainResult reserve(BigDecimal amount, String currency) {
+        DomainResult domainResult = validateReserve(amount, currency);
         if (!domainResult.isValid()) {
           return domainResult;
         }
@@ -89,8 +89,8 @@ public class Account {
         return DomainResult.ok();
     }
 
-    public DomainResult<Void> releaseReserved(BigDecimal amount, String currency) {
-        DomainResult<Void> domainResult = validateReleaseReserved(amount, currency);
+    public DomainResult releaseReserved(BigDecimal amount, String currency) {
+        DomainResult domainResult = validateReleaseReserved(amount, currency);
         if (!domainResult.isValid()) {
             return domainResult;
         }
@@ -100,8 +100,8 @@ public class Account {
         return DomainResult.ok();
     }
 
-    public DomainResult<Void> consumeReserved(BigDecimal amount, String currency) {
-        DomainResult<Void> domainResult = validateConsumeReserved(amount, currency);
+    public DomainResult consumeReserved(BigDecimal amount, String currency) {
+        DomainResult domainResult = validateConsumeReserved(amount, currency);
         if (!domainResult.isValid()) {
             return domainResult;
         }
@@ -110,8 +110,8 @@ public class Account {
         return DomainResult.ok();
     }
 
-    public DomainResult<Void> credit(BigDecimal amount, String currency) {
-        DomainResult<Void> domainResult = validateCredit(amount, currency);
+    public DomainResult credit(BigDecimal amount, String currency) {
+        DomainResult domainResult = validateCredit(amount, currency);
         if (!domainResult.isValid()) {
             return domainResult;
         }
@@ -120,7 +120,7 @@ public class Account {
         return DomainResult.ok();
     }
 
-    private DomainResult<Void> validateAmountAndCurrency(BigDecimal amount, String currency) {
+    private DomainResult validateAmountAndCurrency(BigDecimal amount, String currency) {
         if (amount == null || amount.signum() <= 0) {
             return DomainResult.fail(DomainErrorCode.INVALID_AMOUNT, "Amount must be > 0");
         }

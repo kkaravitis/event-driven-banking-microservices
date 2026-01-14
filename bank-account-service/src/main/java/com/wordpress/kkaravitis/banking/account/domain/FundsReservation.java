@@ -4,9 +4,6 @@ import com.wordpress.kkaravitis.banking.account.domain.types.ReleaseReason;
 import com.wordpress.kkaravitis.banking.account.domain.types.ReservationStatus;
 import com.wordpress.kkaravitis.banking.account.domain.values.DomainErrorCode;
 import com.wordpress.kkaravitis.banking.account.domain.values.DomainResult;
-import com.wordpress.kkaravitis.banking.account.domain.values.FinalizeOutcome;
-import com.wordpress.kkaravitis.banking.account.domain.values.ReleaseOutcome;
-import com.wordpress.kkaravitis.banking.account.domain.values.Transition;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -90,7 +87,7 @@ public class FundsReservation {
      * FINALIZED -> idempotent ok
      * RELEASED -> fail
      */
-    public DomainResult<FinalizeOutcome> finalizeTransfer(Account fromAccount, Account toAccount) {
+    public DomainResult finalizeTransfer(Account fromAccount, Account toAccount) {
         ReservationStatus current = this.status;
 
         if (current == ReservationStatus.RELEASED) {
@@ -101,10 +98,7 @@ public class FundsReservation {
         }
 
         if (current == ReservationStatus.FINALIZED) {
-            return DomainResult.ok(
-                  new FinalizeOutcome(transferId),
-                  new Transition(current.name(), current.name())
-            );
+            return DomainResult.ok();
         }
 
         // current == ACTIVE
@@ -113,33 +107,30 @@ public class FundsReservation {
         }
 
         // Validate both mutations first (no partial updates)
-        DomainResult<Void> v1 = fromAccount.validateConsumeReserved(amount, currency);
+        DomainResult v1 = fromAccount.validateConsumeReserved(amount, currency);
         if (!v1.isValid()) {
             return DomainResult.fail(v1.getError().code(), v1.getError().message());
         }
 
-        DomainResult<Void> v2 = toAccount.validateCredit(amount, currency);
+        DomainResult v2 = toAccount.validateCredit(amount, currency);
         if (!v2.isValid()) {
             return DomainResult.fail(v2.getError().code(), v2.getError().message());
         }
 
         // Apply mutations
-        DomainResult<Void> r1 = fromAccount.consumeReserved(amount, currency);
+        DomainResult r1 = fromAccount.consumeReserved(amount, currency);
         if (!r1.isValid()) {
             return DomainResult.fail(r1.getError().code(), r1.getError().message());
         }
 
-        DomainResult<Void> r2 = toAccount.credit(amount, currency);
+        DomainResult r2 = toAccount.credit(amount, currency);
         if (!r2.isValid()) {
             return DomainResult.fail(r2.getError().code(), r2.getError().message());
         }
 
         this.status = ReservationStatus.FINALIZED;
 
-        return DomainResult.ok(
-              new FinalizeOutcome(transferId),
-              new Transition(current.name(), this.status.name())
-        );
+        return DomainResult.ok();
     }
 
     /**
@@ -147,7 +138,7 @@ public class FundsReservation {
      * RELEASED -> idempotent ok (keeps reason)
      * FINALIZED -> fail
      */
-    public DomainResult<ReleaseOutcome> release(Account fromAccount) {
+    public DomainResult release(Account fromAccount) {
         return releaseInternal(fromAccount, ReleaseReason.NORMAL);
     }
 
@@ -156,11 +147,11 @@ public class FundsReservation {
      * RELEASED -> idempotent ok (upgrades reason to CANCELLED)
      * FINALIZED -> fail
      */
-    public DomainResult<ReleaseOutcome> cancel(Account fromAccount) {
+    public DomainResult cancel(Account fromAccount) {
         return releaseInternal(fromAccount, ReleaseReason.CANCELLED);
     }
 
-    private DomainResult<ReleaseOutcome> releaseInternal(Account fromAccount, ReleaseReason requestedReason) {
+    private DomainResult releaseInternal(Account fromAccount, ReleaseReason requestedReason) {
         ReservationStatus current = this.status;
 
         if (current == ReservationStatus.FINALIZED) {
@@ -175,10 +166,7 @@ public class FundsReservation {
             if (requestedReason == ReleaseReason.CANCELLED && this.releaseReason != ReleaseReason.CANCELLED) {
                 this.releaseReason = ReleaseReason.CANCELLED;
             }
-            return DomainResult.ok(
-                  new ReleaseOutcome(transferId, reservationId, this.releaseReason),
-                  new Transition(current.name(), current.name())
-            );
+            return DomainResult.ok();
         }
 
         // current == ACTIVE
@@ -186,18 +174,19 @@ public class FundsReservation {
             return DomainResult.fail(DomainErrorCode.CURRENCY_MISMATCH, "From account must be provided");
         }
 
-        DomainResult<Void> v = fromAccount.validateReleaseReserved(amount, currency);
-        if (!v.isValid()) return DomainResult.fail(v.getError().code(), v.getError().message());
+        DomainResult v = fromAccount.validateReleaseReserved(amount, currency);
+        if (!v.isValid()) {
+            return DomainResult.fail(v.getError().code(), v.getError().message());
+        }
 
-        DomainResult<Void> r = fromAccount.releaseReserved(amount, currency);
-        if (!r.isValid()) return DomainResult.fail(r.getError().code(), r.getError().message());
+        DomainResult r = fromAccount.releaseReserved(amount, currency);
+        if (!r.isValid()) {
+            return DomainResult.fail(r.getError().code(), r.getError().message());
+        }
 
         this.status = ReservationStatus.RELEASED;
         this.releaseReason = requestedReason;
 
-        return DomainResult.ok(
-              new ReleaseOutcome(transferId, reservationId, this.releaseReason),
-              new Transition(current.name(), this.status.name())
-        );
+        return DomainResult.ok();
     }
 }

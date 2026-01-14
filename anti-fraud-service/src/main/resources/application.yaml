@@ -1,0 +1,67 @@
+app:
+  kafka:
+    topics:
+      transfer-execution-saga-replies-topic: transfer-execution-saga-replies
+      transfer-cancellation-saga-replies-topic: transfer-cancellation-saga-replies
+      accounts-service-commands-topic: accounts-service-commands
+      anti-fraud-service-commands-topic: anti-fraud-service-commands
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: anti-fraud-service
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:transferdb}
+    username: ${DB_USER:transfer}
+    password: ${DB_PASSWORD:transfer}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate   # Flyway creates/updates schema; Hibernate only validates it
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        format_sql: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+
+  sql:
+    init:
+      mode: never
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+
+ management:
+   tracing:
+     sampling:
+       probability: 1.0
+   zipkin:
+     tracing:
+       endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
+
+logging:
+  level:
+    org.flywaydb: INFO

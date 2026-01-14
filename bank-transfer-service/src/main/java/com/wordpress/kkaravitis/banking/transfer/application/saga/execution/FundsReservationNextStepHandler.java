@@ -6,7 +6,7 @@ import com.wordpress.kkaravitis.banking.account.api.events.FundsReservationFaile
 import com.wordpress.kkaravitis.banking.account.api.events.FundsReservedEvent;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaParticipantCommand;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaStepResult;
-import com.wordpress.kkaravitis.banking.transfer.domain.AggregateResult;
+import com.wordpress.kkaravitis.banking.transfer.domain.DomainResult;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainError;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainErrorCode;
 import com.wordpress.kkaravitis.banking.transfer.infrastructure.kafka.Topics;
@@ -46,7 +46,7 @@ public class FundsReservationNextStepHandler implements TransferExecutionSagaSte
         final FundsReservedEvent event = (FundsReservedEvent)context.getEvent();
         final TransferExecutionSagaData sagaData = (TransferExecutionSagaData) context.getSagaData();
 
-        AggregateResult aggregateResult = context.getTransfer().startCompletion(event.getReservationId());
+        DomainResult aggregateResult = context.getTransfer().startCompletion(event.getReservationId());
 
         if (aggregateResult.isValid()) {
             return Optional.of(SagaStepResult.
