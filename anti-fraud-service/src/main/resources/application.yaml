@@ -1,10 +1,8 @@
 app:
   kafka:
     topics:
-      transfer-execution-saga-replies-topic: transfer-execution-saga-replies
-      transfer-cancellation-saga-replies-topic: transfer-cancellation-saga-replies
-      accounts-service-commands-topic: accounts-service-commands
       anti-fraud-service-commands-topic: anti-fraud-service-commands
+      anti-fraud-service-commands-dlt: anti-fraud-service-commands-dlt
 server:
   port: ${SERVER_PORT:8080}
 
@@ -13,15 +11,15 @@ spring:
     name: anti-fraud-service
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:transferdb}
-    username: ${DB_USER:transfer}
-    password: ${DB_PASSWORD:transfer}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:antifraud}
+    username: ${DB_USER:antifraud}
+    password: ${DB_PASSWORD:antifraud}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: validate   # Flyway creates/updates schema; Hibernate only validates it
+      ddl-auto: validate
     properties:
       hibernate:
         jdbc:
@@ -52,15 +50,6 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
-
-
- management:
-   tracing:
-     sampling:
-       probability: 1.0
-   zipkin:
-     tracing:
-       endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
 
 logging:
   level:
