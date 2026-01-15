@@ -4,7 +4,9 @@ import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaData;
 import java.util.UUID;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.extern.jackson.Jacksonized;
 
+@Jacksonized
 @Builder(toBuilder = true)
 @Getter
 public class TransferCancellationSagaData implements SagaData<TransferCancellationSagaStatus> {

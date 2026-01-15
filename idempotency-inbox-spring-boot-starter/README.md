@@ -77,4 +77,4 @@ if (!inboxService.validateAndStore(messageId)) {
 - Disable everything:
   - `idempotency.inbox.enabled=false`
 - Disable cleanup job only:
-  - `inbox.cleanup.enabled=false` (or remove `cron.delete.old.messages`)
+  - `inbox.cleanup.enabled=false` (or remove `cron.delete.old.inbox`)

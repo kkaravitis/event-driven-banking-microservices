@@ -3,11 +3,15 @@ package com.wordpress.kkaravitis.banking.transfer.application.saga.execution;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaData;
 import java.math.BigDecimal;
 import java.util.UUID;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.jackson.Jacksonized;
 
 
-
+@Jacksonized
 @Builder(toBuilder = true)
 @Getter
 public class TransferExecutionSagaData implements SagaData<TransferExecutionSagaStatus> {

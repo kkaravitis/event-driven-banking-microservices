@@ -19,14 +19,14 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @AutoConfiguration(after = TransactionalOutboxAutoConfiguration.class)
 @ConditionalOnProperty(prefix = "outbox", name = "enabled", havingValue = "true", matchIfMissing = true)
 @ConditionalOnProperty(prefix = "outbox.cleanup", name = "enabled", havingValue = "true", matchIfMissing = true)
-@ConditionalOnProperty(name = "cron.delete.old.outbox.messages")
+@ConditionalOnProperty(name = "cron.delete.old.outbox")
 @ConditionalOnClass({EnableScheduling.class, LockProvider.class})
 @EnableScheduling
 @EnableSchedulerLock(defaultLockAtMostFor = "${scheduler.lock-at-most-for:PT10M}")
 public class TransactionalOutboxSchedulingAutoConfiguration {
 
     @Bean
-    @ConditionalOnBean(DataSource.class)
+//    @ConditionalOnBean(DataSource.class)
     @ConditionalOnMissingBean(LockProvider.class)
     public LockProvider lockProvider(DataSource dataSource) {
         return new JdbcTemplateLockProvider(

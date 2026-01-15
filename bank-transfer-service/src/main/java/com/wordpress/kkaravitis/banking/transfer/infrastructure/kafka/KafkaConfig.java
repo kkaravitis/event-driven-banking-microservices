@@ -76,7 +76,7 @@ public class KafkaConfig {
     public CommonErrorHandler errorHandler(KafkaTemplate<String, String> kafkaTemplate) {
         DeadLetterPublishingRecoverer recoverer =
               new DeadLetterPublishingRecoverer(kafkaTemplate, (r, ex) ->
-                    new TopicPartition(r.topic() + ".DLT", r.partition())
+                    new TopicPartition(r.topic() + "-dlt", r.partition())
               );
 
         FixedBackOff backOff = new FixedBackOff(0L, 2L);

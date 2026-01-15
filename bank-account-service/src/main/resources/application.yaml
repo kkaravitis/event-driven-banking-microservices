@@ -3,16 +3,16 @@ app:
     topics:
       accounts-service-commands-topic: accounts-service-commands
 server:
-  port: ${SERVER_PORT:8080}
+  port: 8081
 
 spring:
   application:
     name: bank-account-service
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:accounts}
-    username: ${DB_USER:accounts}
-    password: ${DB_PASSWORD:accounts}
+    url: jdbc:postgresql://localhost:5433/accounts
+    username: accounts
+    password: accounts
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -53,8 +53,15 @@ management:
 logging:
   level:
     org.flywaydb: INFO
+    com.wordpress.kkaravitis: DEBUG
 
 inbox:
+  cleanup:
+    retention: "P1D"
+    lock-at-most-for: "PT5M"
+    lock-at-least-for: "PT10S"
+
+outbox:
   cleanup:
     retention: "P1D"
     lock-at-most-for: "PT5M"
@@ -63,4 +70,5 @@ inbox:
 cron:
   delete:
     old:
-      messages: "0 0/10 * * * *"
+      inbox: "0 0 0/1 * * *"
+      outbox: "0 0 0/1 * * *"

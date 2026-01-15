@@ -19,14 +19,14 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @AutoConfiguration(after = InboxIdempotencyAutoConfiguration.class)
 @ConditionalOnProperty(prefix = "idempotency.inbox", name = "enabled", havingValue = "true", matchIfMissing = true)
 @ConditionalOnProperty(prefix = "inbox.cleanup", name = "enabled", havingValue = "true", matchIfMissing = true)
-@ConditionalOnProperty(name = "cron.delete.old.messages")
+@ConditionalOnProperty(name = "cron.delete.old.inbox")
 @ConditionalOnClass({EnableScheduling.class, LockProvider.class})
 @EnableScheduling
 @EnableSchedulerLock(defaultLockAtMostFor = "${scheduler.lock-at-most-for:PT10M}")
 public class InboxIdempotencySchedulingAutoConfiguration {
 
     @Bean
-    @ConditionalOnBean(DataSource.class)
+//    @ConditionalOnBean(DataSource.class)
     @ConditionalOnMissingBean(LockProvider.class)
     public LockProvider lockProvider(DataSource dataSource) {
         return new JdbcTemplateLockProvider(

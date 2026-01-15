@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 public class MessagingAdapter {
     private final TransferService transferService;
 
-    @KafkaListener(topics = "${app.kafka.transfer-execution-saga-replies-topic}")
+    @KafkaListener(topics = "${app.kafka.topics.transfer-execution-saga-replies-topic}")
     public void handleExecutionSagaReplies(
           @Header(MESSAGE_ID_HEADER) String messageId,
           @Header(CORRELATION_ID_HEADER) String correlationId,
@@ -31,7 +31,7 @@ public class MessagingAdapter {
             ));
     }
 
-    @KafkaListener(topics = "${app.kafka.transfer-cancellation-saga-replies-topic}")
+    @KafkaListener(topics = "${app.kafka.topics.transfer-cancellation-saga-replies-topic}")
     public void handleCancellationSagaReplies(
           @Header(MESSAGE_ID_HEADER) String messageId,
           @Header(CORRELATION_ID_HEADER) String correlationId,

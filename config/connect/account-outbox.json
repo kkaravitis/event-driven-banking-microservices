@@ -1,0 +1,41 @@
+{
+  "name": "account-outbox",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "tasks.max": "1",
+
+    "database.hostname": "postgres-account",
+    "database.port": "5432",
+    "database.user": "accounts",
+    "database.password": "accounts",
+    "database.dbname": "accounts",
+
+    "plugin.name": "pgoutput",
+
+    "schema.include.list": "public",
+    "table.include.list": "public.outbox_message",
+
+    "slot.name": "dbz_account_outbox_slot",
+    "publication.name": "dbz_account_outbox_pub",
+    "publication.autocreate.mode": "filtered",
+
+    "topic.prefix": "account",
+
+    "transforms": "outbox",
+    "transforms.outbox.type": "io.debezium.transforms.outbox.EventRouter",
+
+    "transforms.outbox.route.by.field": "destination_topic",
+    "transforms.outbox.route.topic.replacement": "${routedByValue}",
+
+    "transforms.outbox.table.field.event.id": "message_id",
+    "transforms.outbox.table.field.event.key": "correlation_id",
+    "transforms.outbox.table.field.event.payload": "payload",
+
+    "transforms.outbox.table.fields.additional.placement": "message_id:header:x-message-id,correlation_id:header:x-correlation-id,message_type:header:x-message-type,reply_topic:header:x-reply-topic",
+
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.storage.StringConverter",
+
+    "include.schema.changes": "false"
+  }
+}

@@ -46,18 +46,18 @@ public class FundsReservationNextStepHandler implements TransferExecutionSagaSte
         final FundsReservedEvent event = (FundsReservedEvent)context.getEvent();
         final TransferExecutionSagaData sagaData = (TransferExecutionSagaData) context.getSagaData();
 
-        DomainResult aggregateResult = context.getTransfer().startCompletion(event.getReservationId());
+        DomainResult aggregateResult = context.getTransfer().startCompletion(event.reservationId());
 
         if (aggregateResult.isValid()) {
             return Optional.of(SagaStepResult.
                   <TransferExecutionSagaStatus>builder()
-                  .sagaData(sagaData.withReservationId(event.getReservationId())
+                  .sagaData(sagaData.withReservationId(event.reservationId())
                         .withStatus(TransferExecutionSagaStatus.FINALIZATION_PENDING))
                   .sagaParticipantCommand(SagaParticipantCommand.builder()
                         .destinationTopic(topics.accountsServiceCommandsTopic())
                         .messageType(FinalizeTransferCommand.MESSAGE_TYPE)
                         .payload(FinalizeTransferCommand.builder()
-                              .reservationId(event.getReservationId())
+                              .reservationId(event.reservationId())
                               .customerId(sagaData.getCustomerId())
                               .transferId(sagaData.getTransferId())
                               .build())

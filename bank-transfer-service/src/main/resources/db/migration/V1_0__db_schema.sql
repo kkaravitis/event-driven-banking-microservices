@@ -7,15 +7,15 @@ CREATE TABLE IF NOT EXISTS transfer (
     state                 VARCHAR(255)    NOT NULL,
     funds_reservation_id  VARCHAR(255)    NULL,
     version               BIGINT          NOT NULL DEFAULT 0,
-    created_at            TIMESTAMPTZ      NOT NULL DEFAULT now(),
-    updated_at            TIMESTAMPTZ      NOT NULL DEFAULT now()
+    created_at            TIMESTAMPTZ     NOT NULL DEFAULT now(),
+    updated_at            TIMESTAMPTZ     NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS saga (
     saga_id     UUID          PRIMARY KEY,
     saga_type   VARCHAR(255)  NOT NULL,
     saga_state  VARCHAR(255)  NOT NULL,
-    saga_data   JSONB         NOT NULL,
+    saga_data   TEXT          NOT NULL,
     version     BIGINT        NOT NULL DEFAULT 0,
     created_at  TIMESTAMPTZ    NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ    NOT NULL DEFAULT now()

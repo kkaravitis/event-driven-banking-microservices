@@ -16,7 +16,6 @@ import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaOrchestrat
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaReplyHandlerContext;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainResult;
 import com.wordpress.kkaravitis.banking.transfer.domain.Transfer;
-import com.wordpress.kkaravitis.banking.transfer.domain.Transition;
 import com.wordpress.kkaravitis.banking.transfer.infrastructure.kafka.Topics;
 import java.util.List;
 import java.util.UUID;
@@ -44,9 +43,6 @@ public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<Transfer
     @Transactional
     public DomainResult start(InitiateTransferCommand command) {
         UUID transferId = UUID.randomUUID();
-        UUID sagaId = UUID.randomUUID();
-
-        // create new transfer
         Transfer transfer = Transfer.createNew(
               transferId,
               command.getFromAccountId(),
@@ -56,6 +52,7 @@ public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<Transfer
         );
         transferStore.save(transfer);
 
+        UUID sagaId = UUID.randomUUID();
         TransferExecutionSagaData sagaData = TransferExecutionSagaData.builder()
               .transferId(transferId)
               .customerId(command.getCustomerId())
@@ -74,14 +71,14 @@ public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<Transfer
         );
         sagaStore.save(sagaEntity);
 
-        CheckFraudCommand checkFraudCommand = CheckFraudCommand.builder()
-              .transferId(transferId)
-              .customerId(command.getCustomerId())
-              .fromAccountId(command.getFromAccountId())
-              .toAccountId(command.getToAccountId())
-              .amount(command.getAmount())
-              .currency(command.getCurrency())
-              .build();
+        CheckFraudCommand checkFraudCommand = new CheckFraudCommand(
+              transferId,
+              command.getCustomerId(),
+              command.getFromAccountId(),
+              command.getToAccountId(),
+              command.getAmount(),
+              command.getCurrency()
+        );
 
         transactionalOutbox.enqueue(TransactionalOutboxContext.builder()
               .correlationId(sagaId)

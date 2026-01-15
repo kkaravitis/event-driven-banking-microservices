@@ -22,7 +22,7 @@ public class InboxCleanupJob {
         this.cleanupProperties = cleanupProperties;
     }
 
-    @Scheduled(cron = "${cron.delete.old.messages}")
+    @Scheduled(cron = "${cron.delete.old.inbox}")
     @SchedulerLock(
         name = "delete_old_inbox_messages",
         lockAtMostFor = "${inbox.cleanup.lock-at-most-for:PT5M}",

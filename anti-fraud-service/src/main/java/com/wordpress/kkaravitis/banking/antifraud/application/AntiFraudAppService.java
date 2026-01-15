@@ -23,16 +23,16 @@ public class AntiFraudAppService implements AntiFraudService {
     public void handleCheckFraudCommand(CheckFraudCommandContext context) {
         CheckFraudCommand command = context.getCheckFraudCommand();
         FraudDecision decision = blacklistCheckService
-              .check(command.getFromAccountId(), command.getToAccountId());
+              .check(command.fromAccountId(), command.toAccountId());
 
         String messageType;
         Object payload;
         if (decision.approved()) {
             messageType = FraudEventType.FRAUD_APPROVED.getMessageType();
-            payload = new FraudApprovedEvent(command.getTransferId());
+            payload = new FraudApprovedEvent(command.transferId());
         } else {
             messageType = FraudEventType.FRAUD_REJECTED.getMessageType();
-            payload = new FraudRejectedEvent(command.getTransferId(), decision.reason());
+            payload = new FraudRejectedEvent(command.transferId(), decision.reason());
         }
         String newMessageId = UUID.randomUUID().toString();
 

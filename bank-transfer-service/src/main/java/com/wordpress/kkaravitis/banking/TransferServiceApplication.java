@@ -1,4 +1,4 @@
-package com.wordpress.kkaravitis.banking.transfer;
+package com.wordpress.kkaravitis.banking;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 public class TransferServiceApplication {
 
    public static void main(String[] args) {
-       SpringApplication.run(TransferServiceApplication.class, args);
+       SpringApplication.run(TransferServiceApplication.class);
    }
 
 }

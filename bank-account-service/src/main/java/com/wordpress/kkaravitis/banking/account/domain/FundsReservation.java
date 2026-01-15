@@ -5,9 +5,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import jakarta.persistence.criteria.CriteriaBuilder.In;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -46,6 +50,12 @@ public class FundsReservation {
     @Column(name = "release_reason")
     private ReleaseReason releaseReason; // null until released
 
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
     @Version
     private long version;
 
@@ -63,6 +73,8 @@ public class FundsReservation {
         this.currency = currency;
         this.status = ReservationStatus.ACTIVE;
         this.releaseReason = null;
+        this.createdAt = Instant.now();
+        this.updatedAt = Instant.now();
     }
 
     public static FundsReservation createNew(String reservationId,
@@ -72,6 +84,16 @@ public class FundsReservation {
           BigDecimal amount,
           String currency) {
         return new FundsReservation(reservationId, transferId, fromAccountId, toAccountId, amount, currency);
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = Instant.now();
+    }
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = Instant.now();
     }
 
     public boolean isCancelled() {

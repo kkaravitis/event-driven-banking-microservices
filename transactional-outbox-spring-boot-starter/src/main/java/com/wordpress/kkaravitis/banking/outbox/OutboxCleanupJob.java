@@ -19,7 +19,7 @@ public class OutboxCleanupJob {
     private final OutboxMessageRepository repository;
     private final OutboxCleanupProperties cleanupProperties;
 
-    @Scheduled(cron = "${cron.delete.old.outbox.messages}")
+    @Scheduled(cron = "${cron.delete.old.outbox}")
     @SchedulerLock(
         name = "delete_old_outbox_messages",
         lockAtMostFor = "${outbox.cleanup.lock-at-most-for:PT5M}",

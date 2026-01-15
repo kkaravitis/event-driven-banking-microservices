@@ -20,7 +20,7 @@ public class MessagingAdapter {
 
     private final AccountCommandHandlerService accountCommandHandlerService;
 
-    @KafkaListener(topics = "${app.kafka.accounts-service-commands-topic}")
+    @KafkaListener(topics = "${app.kafka.topics.accounts-service-commands-topic}")
     public void handleAccountCommand(
           @Header(MESSAGE_ID_HEADER) String messageId,
           @Header(CORRELATION_ID_HEADER) String correlationId,

@@ -1,4 +1,4 @@
-package com.wordpress.kkaravitis.banking.antifraud;
+package com.wordpress.kkaravitis.banking;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

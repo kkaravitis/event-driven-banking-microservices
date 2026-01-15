@@ -6,22 +6,22 @@ app:
       accounts-service-commands-topic: accounts-service-commands
       anti-fraud-service-commands-topic: anti-fraud-service-commands
 server:
-  port: ${SERVER_PORT:8080}
+  port: 8080
 
 spring:
   application:
     name: bank-transfer-service
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:transferdb}
-    username: ${DB_USER:transfer}
-    password: ${DB_PASSWORD:transfer}
+    url: jdbc:postgresql://localhost:5432/transfers
+    username: transfers
+    password: transfers
     driver-class-name: org.postgresql.Driver
 
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: validate   # Flyway creates/updates schema; Hibernate only validates it
+      ddl-auto: validate
     properties:
       hibernate:
         jdbc:
@@ -63,7 +63,14 @@ inbox:
     lock-at-most-for: "PT5M"
     lock-at-least-for: "PT10S"
 
+outbox:
+  cleanup:
+    retention: "P1D"
+    lock-at-most-for: "PT5M"
+    lock-at-least-for: "PT10S"
+
 cron:
   delete:
     old:
-      messages: "0 0/10 * * * *"
+      inbox: "0 0 0/1 * * *"
+      outbox: "0 0 0/1 * * *"

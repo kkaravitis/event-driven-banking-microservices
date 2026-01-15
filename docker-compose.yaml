@@ -1,0 +1,220 @@
+version: '3.8'
+
+services:
+
+  postgres-transfer:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: transfers
+      POSTGRES_USER: transfers
+      POSTGRES_PASSWORD: transfers
+    volumes:
+      - transfer_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U transfers"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+      - "-c"
+      - "max_wal_senders=10"
+      - "-c"
+      - "max_replication_slots=10"
+    networks:
+      - banking-net
+
+  postgres-account:
+    image: postgres:15
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: accounts
+      POSTGRES_USER: accounts
+      POSTGRES_PASSWORD: accounts
+    volumes:
+      - account_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U accounts" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+      - "-c"
+      - "max_wal_senders=10"
+      - "-c"
+      - "max_replication_slots=10"
+    networks:
+      - banking-net
+
+  postgres-antifraud:
+    image: postgres:15
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: antifraud
+      POSTGRES_USER: antifraud
+      POSTGRES_PASSWORD: antifraud
+    volumes:
+      - antifraud_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U antifraud" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+      - "-c"
+      - "max_wal_senders=10"
+      - "-c"
+      - "max_replication_slots=10"
+    networks:
+      - banking-net
+
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    ports:
+      - "9080:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@banking.dev
+      PGADMIN_DEFAULT_PASSWORD: admin
+    depends_on:
+      - postgres-transfer
+      - postgres-antifraud
+      - postgres-account
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - banking-net
+
+  zookeeper:
+    image: zookeeper:3.8.0
+    ports:
+      - "2181:2181"
+    restart: always
+    environment:
+      JVMFLAGS: "-Xms1024m -Xmx2048m"
+      ZOO_ENABLE_AUTH: "false"
+    networks:
+      - banking-net
+    volumes:
+      - zookeeper_data:/data
+      - zookeeper_datalog:/datalog
+
+  kafka:
+    image: confluentinc/cp-kafka:7.1.2
+    hostname: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka:19092,LISTENER_DOCKER_EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_BROKER_ID: 1
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_MAX_TIMEOUT_MS: 1800000
+    depends_on:
+      - zookeeper
+    networks:
+      - banking-net
+    command:
+      - bash
+      - -lc
+      - >
+        set -euo pipefail;
+        /etc/confluent/docker/run & pid=$$!;
+        echo "Waiting for Kafka...";
+        for i in $$(seq 1 60); do
+          if kafka-topics --bootstrap-server localhost:9092 --list >/dev/null 2>&1; then
+            echo "Kafka is up."; break; fi;
+          echo "  not yet ($$i/60)"; sleep 2;
+        done;
+        
+        kafka-topics --bootstrap-server kafka:19092 --create --if-not-exists --topic connect-configs --partitions 1 --replication-factor 1 --config cleanup.policy=compact || true;
+        kafka-topics --bootstrap-server kafka:19092 --create --if-not-exists --topic connect-offsets --partitions 25 --replication-factor 1 --config cleanup.policy=compact || true;
+        kafka-topics --bootstrap-server kafka:19092 --create --if-not-exists --topic connect-status --partitions 5 --replication-factor 1 --config cleanup.policy=compact || true;
+        
+        for t in transfer-execution-saga-replies transfer-execution-saga-replies-dlt transfer-cancellation-saga-replies transfer-cancellation-saga-replies-dlt accounts-service-commands accounts-service-commands-dlt anti-fraud-service-commands anti-fraud-service-commands-dlt ; do
+          kafka-topics --bootstrap-server localhost:9092 \
+            --create --if-not-exists --topic "$$t" --partitions 1 --replication-factor 1 || true;
+        done;
+
+        echo "Kafka topics ensured.";
+        wait "$$pid";
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:3.27.0
+    hostname: kafdrop
+    ports:
+      - "9001:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:19092"
+      JVM_OPTS: "-Xms32M -Xmx64M"
+      SERVER_SERVLET_CONTEXTPATH: "/"
+    depends_on:
+      - kafka
+    networks:
+      - banking-net
+
+  kafka-connect:
+    image: quay.io/debezium/connect:2.7
+    hostname: kafka-connect
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: "kafka:19092"
+      GROUP_ID: "connect-cluster-1"
+      CONFIG_STORAGE_TOPIC: "connect-configs"
+      OFFSET_STORAGE_TOPIC: "connect-offsets"
+      STATUS_STORAGE_TOPIC: "connect-status"
+
+      # Converters for typical JSON payload usage
+      KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
+      VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+
+      # Nice to have
+      REST_ADVERTISED_HOST_NAME: "kafka-connect"
+    depends_on:
+      - kafka
+      - postgres-transfer
+      - postgres-account
+      - postgres-antifraud
+    networks:
+      - banking-net
+
+volumes:
+  transfer_data:
+    driver: local
+  account_data:
+    driver: local
+  antifraud_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  zookeeper_data:
+    driver: local
+  zookeeper_datalog:
+    driver: local
+  kafka_data:
+    driver: local
+
+networks:
+  banking-net:
+    external: true

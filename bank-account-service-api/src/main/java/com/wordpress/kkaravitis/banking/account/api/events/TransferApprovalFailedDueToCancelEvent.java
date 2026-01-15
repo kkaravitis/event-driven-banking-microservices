@@ -4,10 +4,8 @@ import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-@Getter
-@AllArgsConstructor
-public class TransferApprovalFailedDueToCancelEvent {
-    private UUID transferId;
-    private String reason;
-}
+public record TransferApprovalFailedDueToCancelEvent (
+    UUID transferId,
+    String reason
+){}
 

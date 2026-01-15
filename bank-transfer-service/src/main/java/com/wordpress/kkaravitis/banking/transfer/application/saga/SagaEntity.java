@@ -29,7 +29,7 @@ public class SagaEntity {
     @Column(name = "saga_state", nullable = false)
     private String sagaState;
 
-    @Column(name = "saga_data", nullable = false, columnDefinition = "jsonb")
+    @Column(name = "saga_data", nullable = false)
     private String sagaDataJson;
 
     @Column(name = "created_at", nullable = false, updatable = false)
