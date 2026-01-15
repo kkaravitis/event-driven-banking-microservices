@@ -18,8 +18,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @ConditionalOnClass({EntityManager.class})
 @ConditionalOnProperty(prefix = "idempotency.inbox", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(InboxCleanupProperties.class)
-//@EntityScan(basePackageClasses = InboxMessage.class)
-//@EnableJpaRepositories(basePackageClasses = InboxMessageRepository.class)
 public class InboxIdempotencyAutoConfiguration {
 
     @Bean

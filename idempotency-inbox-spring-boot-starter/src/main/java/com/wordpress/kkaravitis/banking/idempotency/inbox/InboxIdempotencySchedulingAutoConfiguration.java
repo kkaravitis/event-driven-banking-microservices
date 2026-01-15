@@ -26,7 +26,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class InboxIdempotencySchedulingAutoConfiguration {
 
     @Bean
-//    @ConditionalOnBean(DataSource.class)
     @ConditionalOnMissingBean(LockProvider.class)
     public LockProvider lockProvider(DataSource dataSource) {
         return new JdbcTemplateLockProvider(

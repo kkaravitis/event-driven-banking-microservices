@@ -26,7 +26,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class TransactionalOutboxSchedulingAutoConfiguration {
 
     @Bean
-//    @ConditionalOnBean(DataSource.class)
     @ConditionalOnMissingBean(LockProvider.class)
     public LockProvider lockProvider(DataSource dataSource) {
         return new JdbcTemplateLockProvider(

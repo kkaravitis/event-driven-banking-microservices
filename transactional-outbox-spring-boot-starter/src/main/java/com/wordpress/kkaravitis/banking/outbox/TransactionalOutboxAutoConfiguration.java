@@ -19,8 +19,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @ConditionalOnClass(EntityManager.class)
 @ConditionalOnProperty(prefix = "outbox", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties({OutboxCleanupProperties.class})
-//@EntityScan(basePackageClasses = OutboxMessage.class)
-//@EnableJpaRepositories(basePackageClasses = OutboxMessageRepository.class)
 public class TransactionalOutboxAutoConfiguration {
 
     @Bean
