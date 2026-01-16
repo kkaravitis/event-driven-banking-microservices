@@ -2,7 +2,6 @@ app:
   kafka:
     topics:
       anti-fraud-service-commands-topic: anti-fraud-service-commands
-      anti-fraud-service-commands-dlt: anti-fraud-service-commands-dlt
 server:
   port: 8082
 
@@ -54,3 +53,21 @@ management:
 logging:
   level:
     org.flywaydb: INFO
+
+inbox:
+  cleanup:
+    retention: "P1D"
+    lock-at-most-for: "PT5M"
+    lock-at-least-for: "PT10S"
+
+outbox:
+  cleanup:
+    retention: "P1D"
+    lock-at-most-for: "PT5M"
+    lock-at-least-for: "PT10S"
+
+cron:
+  delete:
+    old:
+      inbox: "0 0 0/1 * * *"
+      outbox: "0 0 0/1 * * *"

@@ -7,7 +7,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface InboxMessageRepository extends JpaRepository<InboxMessage, Long> {
-    boolean existsByMessageId(String messageId);
+    @Modifying
+    @Query(
+          value = """
+                INSERT INTO inbox_message (message_id, received_at)
+                VALUES (:messageId, now())
+                ON CONFLICT (message_id) DO NOTHING
+                """,
+          nativeQuery = true
+    )
+    int insertIfAbsent(@Param("messageId") String messageId);
 
     @Modifying
     @Query("""

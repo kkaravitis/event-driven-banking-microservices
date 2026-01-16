@@ -1,8 +1,10 @@
-package com.wordpress.kkaravitis.banking.transfer.adapter.inbound.web;
+package com.wordpress.kkaravitis.banking.transfer.adapter.inbound;
 
 import com.wordpress.kkaravitis.banking.transfer.TransferService;
 import com.wordpress.kkaravitis.banking.transfer.TransferService.InitiateCancellationCommand;
 import com.wordpress.kkaravitis.banking.transfer.TransferService.InitiateTransferCommand;
+import com.wordpress.kkaravitis.banking.transfer.adapter.inbound.web.InitiateTransferDTO;
+import com.wordpress.kkaravitis.banking.transfer.adapter.inbound.web.TransferResponse;
 import com.wordpress.kkaravitis.banking.transfer.application.ports.TransferStore;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainResult;
 import com.wordpress.kkaravitis.banking.transfer.domain.Transfer;

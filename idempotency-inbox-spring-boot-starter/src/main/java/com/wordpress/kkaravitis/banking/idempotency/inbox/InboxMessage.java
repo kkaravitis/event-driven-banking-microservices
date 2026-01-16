@@ -17,21 +17,11 @@ import lombok.ToString;
 @Getter
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EqualsAndHashCode(of = {"id"})
+@EqualsAndHashCode(of = {"messageId"})
 @ToString
 @Table(name = "inbox_message")
 public class InboxMessage {
-
     @Id
-    @SequenceGenerator(
-        name = "inbox_message_id_gen",
-        sequenceName = "inbox_message_seq",
-        allocationSize = 1
-    )
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "inbox_message_id_gen")
-    @Column(name = "id", nullable = false, updatable = false)
-    private Long id;
-
     @Column(name = "message_id", nullable = false, length = 256, updatable = false)
     private String messageId;
 

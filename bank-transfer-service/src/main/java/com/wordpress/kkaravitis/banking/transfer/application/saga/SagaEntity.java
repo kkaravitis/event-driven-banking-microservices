@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -37,6 +38,10 @@ public class SagaEntity {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @Version
+    @Column(name = "version")
+    private long version;
 
     public SagaEntity(UUID sagaId,
           String sagaType,

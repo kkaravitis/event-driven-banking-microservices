@@ -26,33 +26,35 @@ public class AccountCommandHandlerService {
 
     @Transactional
     public void handle (AccountCommand command) {
-            if (!inboxService.validateAndStore(command.getMessageId())) {
-                return;
-            }
-            AccountCommandType accountCommandType = AccountCommandType.valueOf(command.getMessageType());
+        if (!inboxService.validateAndStore(command.getMessageId())) {
+            return;
+        }
 
-            DomainEvent domainEvent = switch (accountCommandType) {
-                case CANCEL_FUNDS_RESERVATION -> accountService
-                      .cancelFundsReservation(toCommand(command.getMessage(),
-                            CancelFundsReservationCommand.class));
-                case RESERVE_FUNDS -> accountService
-                      .reserveFunds(toCommand(command.getMessage(),
-                            ReserveFundsCommand.class));
-                case RELEASE_FUNDS -> accountService
-                      .releaseFunds(toCommand(command.getMessage(),
-                            ReleaseFundsCommand.class));
-                case FINALIZE_TRANSFER -> accountService
-                      .finalizeTransfer(toCommand(command.getMessage(),
-                            FinalizeTransferCommand.class));
-            };
+        AccountCommandType accountCommandType = AccountCommandType
+              .valueOf(command.getMessageType());
 
-            transactionalOutbox.enqueue(TransactionalOutboxContext
-                  .builder()
-                  .messageType(domainEvent.type())
-                  .payload(domainEvent.payload())
-                  .correlationId(command.getCorrelationId())
-                  .destinationTopic(command.getReplyTopic())
-                  .build());
+        DomainEvent domainEvent = switch (accountCommandType) {
+            case CANCEL_FUNDS_RESERVATION -> accountService
+                  .cancelFundsReservation(toCommand(command.getMessage(),
+                        CancelFundsReservationCommand.class));
+            case RESERVE_FUNDS -> accountService
+                  .reserveFunds(toCommand(command.getMessage(),
+                        ReserveFundsCommand.class));
+            case RELEASE_FUNDS -> accountService
+                  .releaseFunds(toCommand(command.getMessage(),
+                        ReleaseFundsCommand.class));
+            case FINALIZE_TRANSFER -> accountService
+                  .finalizeTransfer(toCommand(command.getMessage(),
+                        FinalizeTransferCommand.class));
+        };
+
+        transactionalOutbox.enqueue(TransactionalOutboxContext
+              .builder()
+              .messageType(domainEvent.type())
+              .payload(domainEvent.payload())
+              .correlationId(command.getCorrelationId())
+              .destinationTopic(command.getReplyTopic())
+              .build());
     }
 
     private <T> T toCommand(String json, Class<T> type) {

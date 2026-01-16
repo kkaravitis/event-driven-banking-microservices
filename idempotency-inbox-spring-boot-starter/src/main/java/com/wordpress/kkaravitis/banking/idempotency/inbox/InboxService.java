@@ -8,12 +8,13 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Inbox-based idempotency service.
  *
- * <p>Typical usage (e.g., in a message consumer):
+ * <p>Typical usage (e.g., in a transactional method):
  * <pre>
  * if (!inboxService.validateAndStore(messageId)) {
  *     return; // duplicate
  * }
  * // process
+ *
  * </pre>
  */
 public class InboxService {
@@ -36,10 +37,6 @@ public class InboxService {
             return false;
         }
 
-        if (repository.existsByMessageId(messageId)) {
-            return false;
-        }
-        repository.save(new InboxMessage(messageId));
-        return true;
+        return repository.insertIfAbsent(messageId) == 1;
     }
 }

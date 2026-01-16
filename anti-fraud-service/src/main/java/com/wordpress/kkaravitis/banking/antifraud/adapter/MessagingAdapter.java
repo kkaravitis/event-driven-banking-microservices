@@ -1,12 +1,14 @@
-package com.wordpress.kkaravitis.banking.antifraud.adapter.inbound;
+package com.wordpress.kkaravitis.banking.antifraud.adapter;
 
 import static com.wordpress.kkaravitis.banking.common.MessagingContractUtils.CORRELATION_ID_HEADER;
+import static com.wordpress.kkaravitis.banking.common.MessagingContractUtils.MESSAGE_ID_HEADER;
 import static com.wordpress.kkaravitis.banking.common.MessagingContractUtils.MESSAGE_TYPE_HEADER;
 import static com.wordpress.kkaravitis.banking.common.MessagingContractUtils.REPLY_TOPIC_HEADER;
 
-import com.wordpress.kkaravitis.banking.antifraud.AntiFraudService;
-import com.wordpress.kkaravitis.banking.antifraud.AntiFraudService.CheckFraudCommandContext;
 import com.wordpress.kkaravitis.banking.antifraud.api.commands.CheckFraudCommand;
+import com.wordpress.kkaravitis.banking.antifraud.application.AntiFraudService;
+import com.wordpress.kkaravitis.banking.antifraud.application.CheckFraudCommandContext;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Header;
@@ -23,6 +25,7 @@ public class MessagingAdapter {
     )
     public void handle(
           CheckFraudCommand command,
+          @Header(MESSAGE_ID_HEADER) String messageId,
           @Header(REPLY_TOPIC_HEADER) String replyTopic,
           @Header(CORRELATION_ID_HEADER) String correlationId,
           @Header(MESSAGE_TYPE_HEADER) String inboundMessageType
@@ -35,9 +38,10 @@ public class MessagingAdapter {
         }
 
         antiFraudService.handleCheckFraudCommand(CheckFraudCommandContext.builder()
+                    .messageId(messageId)
                     .checkFraudCommand(command)
-                    .replyTopic(replyTopic)
-                    .correlationId(correlationId)
+                    .destinationTopic(replyTopic)
+                    .correlationId(UUID.fromString(correlationId))
               .build());
     }
 }

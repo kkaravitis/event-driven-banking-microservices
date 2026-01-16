@@ -14,6 +14,7 @@ import com.wordpress.kkaravitis.banking.transfer.application.ports.TransferStore
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaEntity;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaOrchestrator;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaReplyHandlerContext;
+import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.step.TransferExecutionSagaStepHandler;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainResult;
 import com.wordpress.kkaravitis.banking.transfer.domain.Transfer;
 import com.wordpress.kkaravitis.banking.transfer.infrastructure.kafka.Topics;
@@ -71,14 +72,14 @@ public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<Transfer
         );
         sagaStore.save(sagaEntity);
 
-        CheckFraudCommand checkFraudCommand = new CheckFraudCommand(
-              transferId,
-              command.getCustomerId(),
-              command.getFromAccountId(),
-              command.getToAccountId(),
-              command.getAmount(),
-              command.getCurrency()
-        );
+        CheckFraudCommand checkFraudCommand = CheckFraudCommand.builder()
+              .transferId(transferId)
+              .customerId(command.getCustomerId())
+              .fromAccountId(command.getFromAccountId())
+              .toAccountId(command.getToAccountId())
+              .amount(command.getAmount())
+              .currency(command.getCurrency())
+              .build();
 
         transactionalOutbox.enqueue(TransactionalOutboxContext.builder()
               .correlationId(sagaId)

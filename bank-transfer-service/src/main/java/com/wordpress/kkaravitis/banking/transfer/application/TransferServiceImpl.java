@@ -30,15 +30,19 @@ public class TransferServiceImpl implements TransferService {
 
     @Transactional(isolation = Isolation.REPEATABLE_READ)
     public void handleTransferExecutionParticipantReply(SagaParticipantReply reply) {
-        if (inboxService.validateAndStore(reply.messageId())) {
-            transferExecutionSagaOrchestrator.onReply(reply);
+        if (!inboxService.validateAndStore(reply.messageId())) {
+            return;
         }
+        transferExecutionSagaOrchestrator.onReply(reply);
+
     }
 
     @Transactional(isolation = Isolation.REPEATABLE_READ)
     public void handleTransferCancellationParticipantReply(SagaParticipantReply reply) {
-        if (inboxService.validateAndStore(reply.messageId())) {
-            transferCancellationSagaOrchestrator.onReply(reply);
+        if (!inboxService.validateAndStore(reply.messageId())) {
+            return;
         }
+
+        transferCancellationSagaOrchestrator.onReply(reply);
     }
 }

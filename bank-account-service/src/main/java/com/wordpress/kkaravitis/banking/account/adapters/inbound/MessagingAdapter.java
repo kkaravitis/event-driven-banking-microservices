@@ -1,4 +1,4 @@
-package com.wordpress.kkaravitis.banking.account.adapters;
+package com.wordpress.kkaravitis.banking.account.adapters.inbound;
 
 import static com.wordpress.kkaravitis.banking.common.MessagingContractUtils.CORRELATION_ID_HEADER;
 import static com.wordpress.kkaravitis.banking.common.MessagingContractUtils.MESSAGE_ID_HEADER;
