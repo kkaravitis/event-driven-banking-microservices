@@ -17,13 +17,11 @@ import com.wordpress.kkaravitis.banking.transfer.domain.DomainError;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainErrorCode;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainResult;
 import com.wordpress.kkaravitis.banking.transfer.domain.Transfer;
-import com.wordpress.kkaravitis.banking.transfer.domain.TransferState;
 import com.wordpress.kkaravitis.banking.transfer.infrastructure.kafka.Topics;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
@@ -106,7 +104,7 @@ public class TransferCancellationSagaOrchestrator extends SagaOrchestrator<Trans
               .build();
     }
 
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     public void onReply(SagaParticipantReply reply) {
         super.handleReply(SagaReplyHandlerContext.<TransferCancellationSagaStatus>builder()
               .sagaIdHeader(reply.sagaId())
