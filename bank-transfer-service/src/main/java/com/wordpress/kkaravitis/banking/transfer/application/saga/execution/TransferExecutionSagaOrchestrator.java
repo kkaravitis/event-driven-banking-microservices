@@ -21,7 +21,6 @@ import com.wordpress.kkaravitis.banking.transfer.infrastructure.kafka.Topics;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
@@ -94,7 +93,7 @@ public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<Transfer
               .build();
     }
 
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     public void onReply(SagaParticipantReply reply) {
         super.handleReply(SagaReplyHandlerContext.<TransferExecutionSagaStatus>builder()
               .sagaIdHeader(reply.sagaId())

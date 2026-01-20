@@ -7,7 +7,6 @@ import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.Tran
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
@@ -23,12 +22,12 @@ public class TransferServiceImpl implements TransferService {
        return transferExecutionSagaOrchestrator.start(command);
     }
 
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     public DomainResult startCancellation(InitiateCancellationCommand command) {
         return transferCancellationSagaOrchestrator.start(command);
     }
 
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     public void handleTransferExecutionParticipantReply(SagaParticipantReply reply) {
         if (!inboxService.validateAndStore(reply.messageId())) {
             return;
@@ -38,7 +37,7 @@ public class TransferServiceImpl implements TransferService {
 
     }
 
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     public void handleTransferCancellationParticipantReply(SagaParticipantReply reply) {
         if (!inboxService.validateAndStore(reply.messageId())) {
             return;
