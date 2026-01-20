@@ -49,9 +49,9 @@ public class FundsReservationNextStepHandler implements TransferExecutionSagaSte
         final FundsReservedEvent event = (FundsReservedEvent)context.getEvent();
         final TransferExecutionSagaData sagaData = (TransferExecutionSagaData) context.getSagaData();
 
-        DomainResult aggregateResult = context.getTransfer().startCompletion(event.reservationId());
+        DomainResult domainResult = context.getTransfer().startCompletion(event.reservationId());
 
-        if (aggregateResult.isValid()) {
+        if (domainResult.isValid()) {
             return Optional.of(SagaStepResult.
                   <TransferExecutionSagaStatus>builder()
                   .sagaData(sagaData.withReservationId(event.reservationId())
@@ -68,7 +68,7 @@ public class FundsReservationNextStepHandler implements TransferExecutionSagaSte
                   .build());
         } else {
             TransferExecutionSagaStatus newSagaStatus;
-            DomainError domainError = aggregateResult.getError();
+            DomainError domainError = domainResult.getError();
             if (domainError.code() == DomainErrorCode.COMPLETE_TOO_LATE) {
                 newSagaStatus = TransferExecutionSagaStatus.CANCELLED_BY_CANCEL_SAGA;
             } else {

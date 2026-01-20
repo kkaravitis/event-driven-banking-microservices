@@ -101,7 +101,6 @@ public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<Transfer
               .messageType(reply.messageType())
               .payloadJson(reply.payloadJson())
               .sagaDataType(TransferExecutionSagaData.class)
-              .sagaType(TRANSFER_EXECUTION_SAGA)
               .sagaReplyTopic(topics.transferExecutionSagaRepliesTopic())
               .build());
     }

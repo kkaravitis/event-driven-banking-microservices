@@ -36,6 +36,7 @@
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "value.converter": "org.apache.kafka.connect.storage.StringConverter",
 
-    "include.schema.changes": "false"
+    "include.schema.changes": "false",
+    "tombstones.on.delete" : "false"
   }
 }

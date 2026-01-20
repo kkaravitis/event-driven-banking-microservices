@@ -24,9 +24,9 @@ public class FundsReservationCancellationNextStepHandler implements TransferCanc
     public Optional<SagaStepResult<TransferCancellationSagaStatus>> handle(SagaStepHandlerContext<TransferCancellationSagaStatus> context) {
         TransferCancellationSagaData transferCancellationSagaData = (TransferCancellationSagaData) context.getSagaData();
         if (context.getEvent() instanceof FundsReservationCancelledEvent) {
-            DomainResult aggregateResult = context.getTransfer().markCancelled();
+            DomainResult domainResult = context.getTransfer().markCancelled();
             TransferCancellationSagaStatus newStatus;
-            if (aggregateResult.isValid()) {
+            if (domainResult.isValid()) {
                 newStatus = TransferCancellationSagaStatus.COMPLETED;
             } else {
                 newStatus = TransferCancellationSagaStatus.FAILED;

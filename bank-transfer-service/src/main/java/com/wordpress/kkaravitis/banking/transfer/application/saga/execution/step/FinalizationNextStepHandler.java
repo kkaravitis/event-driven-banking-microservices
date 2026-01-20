@@ -52,11 +52,11 @@ public class FinalizationNextStepHandler implements TransferExecutionSagaStepHan
           SagaStepHandlerContext<TransferExecutionSagaStatus> context) {
 
         TransferExecutionSagaStatus newSagaStatus;
-        DomainResult aggregateResult = context.getTransfer().markCompleted();
-        if (aggregateResult.isValid()) {
+        DomainResult domainResult = context.getTransfer().markCompleted();
+        if (domainResult.isValid()) {
             newSagaStatus = TransferExecutionSagaStatus.COMPLETED;
         } else {
-            DomainError domainError = aggregateResult.getError();
+            DomainError domainError = domainResult.getError();
             if (domainError.code() == DomainErrorCode.COMPLETE_TOO_LATE) {
                 newSagaStatus = TransferExecutionSagaStatus.CANCELLED_BY_CANCEL_SAGA;
             } else {

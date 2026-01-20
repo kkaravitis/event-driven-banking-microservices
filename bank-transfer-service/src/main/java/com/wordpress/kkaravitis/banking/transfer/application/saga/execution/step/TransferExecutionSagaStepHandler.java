@@ -12,13 +12,13 @@ import java.util.Optional;
 public interface TransferExecutionSagaStepHandler extends SagaStepHandler<TransferExecutionSagaStatus> {
 
     default Optional<SagaStepResult<TransferExecutionSagaStatus>> rejectTransfer(SagaStepHandlerContext<TransferExecutionSagaStatus> context) {
-        DomainResult aggregateResult = context.getTransfer().reject();
+        DomainResult domainResult = context.getTransfer().reject();
 
         TransferExecutionSagaStatus newStatus;
-        if (aggregateResult.isValid()) {
+        if (domainResult.isValid()) {
             newStatus = TransferExecutionSagaStatus.REJECTED;
         } else {
-            DomainError domainError = aggregateResult.getError();
+            DomainError domainError = domainResult.getError();
             newStatus = domainError.code() == DomainErrorCode.REJECT_TOO_LATE ?
                   TransferExecutionSagaStatus.CANCELLED_BY_CANCEL_SAGA : TransferExecutionSagaStatus.FAILED;
         }

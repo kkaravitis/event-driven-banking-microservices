@@ -44,8 +44,9 @@ public class TransferController {
               .build());
 
         if (domainResult.isValid()) {
-            return ResponseEntity.ok(new TransferResponse(domainResult.getTransferId().toString(),
-                  "REQUESTED", null));
+            return ResponseEntity.accepted()
+                  .body(new TransferResponse(domainResult.getTransferId().toString(),
+                  null, null));
         }
         return ResponseEntity.badRequest().body(new TransferResponse(null,
               null,
@@ -62,8 +63,9 @@ public class TransferController {
                     .customerId(customerId)
               .build());
         if (domainResult.isValid()) {
-            return ResponseEntity.ok(new TransferResponse(domainResult.getTransferId().toString(),
-                  "CANCEL_PENDING", null));
+            return ResponseEntity.accepted()
+                  .body(new TransferResponse(domainResult.getTransferId().toString(),
+                  null, null));
         }
         return ResponseEntity.badRequest().body(new TransferResponse(null,
               null,

@@ -36,8 +36,9 @@ public abstract class SagaOrchestrator<T extends Enum<T>, S extends SagaStepHand
         this.handlersByStatus = sagaStepHandlers.stream().collect(Collectors.toMap(
               SagaStepHandler::currentSagaStatus,
               Function.identity(),
-              (a, b) -> { throw new SagaRuntimeException("Duplicate handler for "
-                    + a.currentSagaStatus()); }
+              (a, b) -> {
+                  throw new SagaRuntimeException("Duplicate handler for "
+                        + a.currentSagaStatus()); }
         ));
     }
 
@@ -47,14 +48,17 @@ public abstract class SagaOrchestrator<T extends Enum<T>, S extends SagaStepHand
         SagaEntity sagaEntity = loadSagaOrThrow(sagaId);
         SagaData<T> sagaData = parseSagaDataOrThrow(sagaEntity, context);
         T currentSagaStatus = sagaData.getStatus();
+
         SagaStepHandler<T> handler = handlersByStatus.get(currentSagaStatus);
         if (handler == null) {
             return;
         }
+
         Optional<Transfer> optionalTransfer = loadTransferOrFailSaga(sagaEntity, sagaData);
         if (optionalTransfer.isEmpty()) {
             return;
         }
+
         final Object event = toEvent(context);
         Transfer transfer = optionalTransfer.get();
         handler.handle(stepContext(event, sagaData, transfer))

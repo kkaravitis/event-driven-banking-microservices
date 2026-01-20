@@ -17,6 +17,7 @@ import com.wordpress.kkaravitis.banking.transfer.domain.DomainError;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainErrorCode;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainResult;
 import com.wordpress.kkaravitis.banking.transfer.domain.Transfer;
+import com.wordpress.kkaravitis.banking.transfer.domain.TransferState;
 import com.wordpress.kkaravitis.banking.transfer.infrastructure.kafka.Topics;
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +43,7 @@ public class TransferCancellationSagaOrchestrator extends SagaOrchestrator<Trans
         this.topics = topics;
     }
 
+    @Transactional
     public DomainResult start(InitiateCancellationCommand command) {
         Optional<Transfer> storeResult = transferStore.load(command.getTransferId());
         if (storeResult.isEmpty()) {
@@ -51,13 +53,16 @@ public class TransferCancellationSagaOrchestrator extends SagaOrchestrator<Trans
                               command.getTransferId())))
                   .build();
         }
+
         Transfer transfer = storeResult.get();
-        DomainResult aggregateResult = transfer.startCancellation();
+
+        DomainResult domainResult = transfer.startCancellation();
+        transferStore.save(transfer);
         TransferCancellationSagaStatus sagaStatus;
-        if (aggregateResult.isValid()) {
+        if (domainResult.isValid()) {
             sagaStatus = TransferCancellationSagaStatus.CANCEL_PENDING;
         } else {
-            DomainError domainError = aggregateResult.getError();
+            DomainError domainError = domainResult.getError();
             if (domainError.code() == DomainErrorCode.CANCEL_TOO_LATE) {
                 sagaStatus = TransferCancellationSagaStatus.REJECTED;
             } else {
@@ -81,8 +86,8 @@ public class TransferCancellationSagaOrchestrator extends SagaOrchestrator<Trans
         );
         sagaStore.save(sagaEntity);
 
-        if (!aggregateResult.isValid()) {
-            return aggregateResult;
+        if (!domainResult.isValid()) {
+            return domainResult;
         }
 
         transactionalOutbox.enqueue(TransactionalOutboxContext.builder()
@@ -108,7 +113,6 @@ public class TransferCancellationSagaOrchestrator extends SagaOrchestrator<Trans
               .messageType(reply.messageType())
               .payloadJson(reply.payloadJson())
               .sagaDataType(TransferCancellationSagaData.class)
-              .sagaType(TRANSFER_CANCELLATION_SAGA)
               .sagaReplyTopic(topics.transferCancellationSagaRepliesTopic())
               .build());
     }

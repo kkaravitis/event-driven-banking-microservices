@@ -33,6 +33,7 @@ public class TransferServiceImpl implements TransferService {
         if (!inboxService.validateAndStore(reply.messageId())) {
             return;
         }
+
         transferExecutionSagaOrchestrator.onReply(reply);
 
     }

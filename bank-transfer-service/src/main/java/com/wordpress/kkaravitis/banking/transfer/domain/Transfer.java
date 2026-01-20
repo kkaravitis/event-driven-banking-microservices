@@ -101,10 +101,10 @@ public class Transfer {
             case REQUESTED -> {
                 this.fundsReservationId = fundsReservationId;
                 state = TransferState.COMPLETION_PENDING;
-                yield success(currentState);
+                yield success();
             }
 
-            case COMPLETION_PENDING -> success(currentState);
+            case COMPLETION_PENDING -> success();
 
             case CANCEL_PENDING, CANCELLED ->
                   transitionError(DomainErrorCode.COMPLETE_TOO_LATE, TransferState.COMPLETION_PENDING);
@@ -121,9 +121,9 @@ public class Transfer {
         return switch (currentState) {
             case COMPLETION_PENDING -> {
                 state = TransferState.COMPLETED;
-                yield success(currentState);
+                yield success();
             }
-            case COMPLETED -> success(currentState);
+            case COMPLETED -> success();
 
             case CANCELLED, CANCEL_PENDING ->
                   transitionError(DomainErrorCode.COMPLETE_TOO_LATE, TransferState.COMPLETED);
@@ -140,10 +140,10 @@ public class Transfer {
         return switch(currentState) {
             case COMPLETION_PENDING, REQUESTED -> {
                 state = TransferState.REJECTED;
-                yield success(currentState);
+                yield success();
             }
 
-            case REJECTED -> success(currentState);
+            case REJECTED -> success();
 
             case CANCEL_PENDING, CANCELLED -> transitionError(DomainErrorCode.REJECT_TOO_LATE, TransferState.REJECTED);
 
@@ -158,10 +158,10 @@ public class Transfer {
         return switch (currentState) {
             case REQUESTED -> {
                 state = TransferState.CANCEL_PENDING;
-                yield success(currentState);
+                yield success();
             }
 
-            case CANCEL_PENDING -> success(currentState);
+            case CANCEL_PENDING -> success();
 
             case REJECTED, COMPLETED, COMPLETION_PENDING ->
                   transitionError(DomainErrorCode.CANCEL_TOO_LATE, TransferState.CANCEL_PENDING);
@@ -178,10 +178,10 @@ public class Transfer {
         return switch (currentState) {
             case CANCEL_PENDING -> {
                 state = TransferState.CANCELLED;
-                yield success(currentState);
+                yield success();
             }
 
-            case CANCELLED -> success(currentState);
+            case CANCELLED -> success();
 
             case REQUESTED, REJECTED, COMPLETED, COMPLETION_PENDING ->
                   transitionError(DomainErrorCode.UNEXPECTED_TRANSITION, TransferState.CANCELLED);
@@ -207,7 +207,7 @@ public class Transfer {
               .build();
     }
 
-    private DomainResult success(TransferState fromState) {
+    private DomainResult success() {
         return DomainResult.builder()
               .transferId(id)
               .build();

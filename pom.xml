@@ -26,7 +26,7 @@
         <!-- Centralized versions (Boot already manages many libs; these override/extend where needed) -->
         <spring-cloud.version>2025.0.1</spring-cloud.version>
         <debezium.version>3.4.0.Final</debezium.version>
-        <testcontainers.version>1.21.0</testcontainers.version>
+        <testcontainers.version>1.21.3</testcontainers.version>
         <lombok.version>1.18.42</lombok.version>
         <shedlock.version>4.29.0</shedlock.version>
     </properties>
