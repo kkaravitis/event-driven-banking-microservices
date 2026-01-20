@@ -78,7 +78,7 @@ You can try to cancel the transfer by executing:
 ```shell script
 transferId="THE TRANSFER ID VALUE"
 
-curl --location --request POST 'http://localhost:8080/banking/transfer/${transferId}/cancel' \
+curl --location --request POST http://localhost:8080/banking/transfer/${transferId}/cancel \
 --header 'X-CUSTOMER-ID: CC-100'
 
 ```
