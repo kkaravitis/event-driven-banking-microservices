@@ -25,7 +25,6 @@ Cleanup deletes rows with `created_at < now() - retention`.
 ```yaml
 outbox:
   enabled: true
-  message-id-prefix: ""   # if empty, defaults to "<aggregateType>-"
 
 outbox:
   cleanup:
@@ -37,27 +36,10 @@ outbox:
 cron:
   delete:
     old:
-      outbox:
-        messages: "0 0/10 * * * *"
+      outbox: "0 0 0/1 * * *" # Check to delete every 1 hour
 
 scheduler:
   lock-at-most-for: "PT10M"
-```
-
-## Usage
-
-```java
-@Transactional
-public void doBusinessStuff(...) {
-  outbox.enqueue(TransactionalOutbox.TransactionalOutboxContext.builder()
-      .aggregateType("transfer")
-      .aggregateId(transferId)
-      .destinationTopic("accounts-service-commands")
-      .messageType("DEBIT_ACCOUNT")
-      .replyTopic("transfer-saga-replies")
-      .payload(command)
-      .build());
-}
 ```
 
 > This starter **does not** include a Kafka publisher. It only enqueues messages in the outbox table.
