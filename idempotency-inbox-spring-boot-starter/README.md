@@ -14,10 +14,10 @@ This starter provides an **inbox table** + a small service to implement **messag
 
 The starter ships two migrations under `classpath:db/migration`:
 
-- `V9000__idempotency_create_inbox_message.sql`
-- `V9001__idempotency_create_shedlock_table.sql`
+- `V0_3__idempotency_create_inbox_message.sql`
+- `V0_4__idempotency_create_shedlock_table.sql`
 
-> If your service already uses high Flyway versions near `9000`, rename these migrations in your fork (or move them to a dedicated Flyway location).
+> If your service already uses high Flyway versions near `0_3, 0_4`, rename these migrations in your fork (or move them to a dedicated Flyway location).
 
 ## Usage
 
@@ -42,7 +42,7 @@ idempotency:
 cron:
   delete:
     old:
-      messages: "0 0/10 * * * *"   # every 10 minutes
+      inbox: "0 0 0/1 * * *"   # every 1 hour
 
 inbox:
   cleanup:
