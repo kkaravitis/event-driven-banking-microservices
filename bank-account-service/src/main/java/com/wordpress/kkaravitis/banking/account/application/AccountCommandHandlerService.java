@@ -7,7 +7,7 @@ import com.wordpress.kkaravitis.banking.account.api.commands.FinalizeTransferCom
 import com.wordpress.kkaravitis.banking.account.api.commands.ReleaseFundsCommand;
 import com.wordpress.kkaravitis.banking.account.api.commands.ReserveFundsCommand;
 import com.wordpress.kkaravitis.banking.account.domain.AccountService;
-import com.wordpress.kkaravitis.banking.account.domain.DomainEvent;
+import com.wordpress.kkaravitis.banking.account.domain.value.DomainEvent;
 import com.wordpress.kkaravitis.banking.idempotency.inbox.InboxService;
 import com.wordpress.kkaravitis.banking.outbox.TransactionalOutbox;
 import com.wordpress.kkaravitis.banking.outbox.TransactionalOutbox.TransactionalOutboxContext;

@@ -75,14 +75,29 @@ class OutboxAtomicityIntegrationTest {
         registry.add("spring.kafka.bootstrap-servers", () -> "localhost:9092");
     }
 
-    @Autowired private TransferService transferService;
-    @Autowired private TransferJpaRepository transferJpaRepository;
-    @Autowired private SagaJpaRepository sagaJpaRepository;
-    @Autowired private OutboxMessageRepository outboxMessageRepository;
-    @Autowired private InboxMessageRepository inboxMessageRepository;
-    @Autowired private ObjectMapper objectMapper;
-    @Autowired private PlatformTransactionManager transactionManager;
-    @Autowired private JdbcTemplate jdbcTemplate;
+    @Autowired
+    private TransferService transferService;
+
+    @Autowired
+    private TransferJpaRepository transferJpaRepository;
+
+    @Autowired
+    private SagaJpaRepository sagaJpaRepository;
+
+    @Autowired
+    private OutboxMessageRepository outboxMessageRepository;
+
+    @Autowired
+    private InboxMessageRepository inboxMessageRepository;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     private TransactionTemplate txTemplate;
 

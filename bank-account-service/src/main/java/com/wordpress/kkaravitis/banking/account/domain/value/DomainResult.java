@@ -1,5 +1,6 @@
-package com.wordpress.kkaravitis.banking.account.domain;
+package com.wordpress.kkaravitis.banking.account.domain.value;
 
+import com.wordpress.kkaravitis.banking.account.domain.type.DomainErrorCode;
 import lombok.Builder;
 import lombok.Getter;
 

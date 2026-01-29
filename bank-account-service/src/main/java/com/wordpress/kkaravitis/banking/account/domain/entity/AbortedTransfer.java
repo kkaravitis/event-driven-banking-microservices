@@ -1,4 +1,4 @@
-package com.wordpress.kkaravitis.banking.account.domain;
+package com.wordpress.kkaravitis.banking.account.domain.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

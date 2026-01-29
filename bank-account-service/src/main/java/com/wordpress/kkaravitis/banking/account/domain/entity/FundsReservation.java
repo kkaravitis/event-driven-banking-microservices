@@ -1,5 +1,9 @@
-package com.wordpress.kkaravitis.banking.account.domain;
+package com.wordpress.kkaravitis.banking.account.domain.entity;
 
+import com.wordpress.kkaravitis.banking.account.domain.type.DomainErrorCode;
+import com.wordpress.kkaravitis.banking.account.domain.type.ReleaseReason;
+import com.wordpress.kkaravitis.banking.account.domain.type.ReservationStatus;
+import com.wordpress.kkaravitis.banking.account.domain.value.DomainResult;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -9,7 +13,6 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
-import jakarta.persistence.criteria.CriteriaBuilder.In;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
@@ -106,44 +109,47 @@ public class FundsReservation {
      * RELEASED -> fail
      */
     public DomainResult finalizeTransfer(Account fromAccount, Account toAccount) {
-        ReservationStatus current = this.status;
+        ReservationStatus currentStatus = this.status;
 
-        if (current == ReservationStatus.RELEASED) {
+        if (currentStatus == ReservationStatus.RELEASED) {
             return DomainResult.fail(
                   DomainErrorCode.RESERVATION_RELEASED,
                   "Cannot finalize reservation %s because it is RELEASED".formatted(reservationId)
             );
         }
 
-        if (current == ReservationStatus.FINALIZED) {
+        if (currentStatus == ReservationStatus.FINALIZED) {
             return DomainResult.ok();
         }
 
-        // current == ACTIVE
         if (fromAccount == null || toAccount == null) {
-            return DomainResult.fail(DomainErrorCode.CURRENCY_MISMATCH, "Accounts must be provided");
+            return DomainResult.fail(DomainErrorCode.CURRENCY_MISMATCH,
+                  "Accounts must be provided");
         }
 
-        // Validate both mutations first (no partial updates)
-        DomainResult v1 = fromAccount.validateConsumeReserved(amount, currency);
-        if (!v1.isValid()) {
-            return DomainResult.fail(v1.getError().code(), v1.getError().message());
+        DomainResult domainResult = fromAccount.validateConsumeReserved(amount, currency);
+        if (!domainResult.isValid()) {
+            return DomainResult.fail(domainResult.getError().code(),
+                  domainResult.getError().message());
         }
 
-        DomainResult v2 = toAccount.validateCredit(amount, currency);
-        if (!v2.isValid()) {
-            return DomainResult.fail(v2.getError().code(), v2.getError().message());
+        domainResult = toAccount.validateCredit(amount, currency);
+        if (!domainResult.isValid()) {
+            return DomainResult.fail(domainResult.getError().code(),
+                  domainResult.getError().message());
         }
 
-        // Apply mutations
-        DomainResult r1 = fromAccount.consumeReserved(amount, currency);
-        if (!r1.isValid()) {
-            return DomainResult.fail(r1.getError().code(), r1.getError().message());
+        domainResult = fromAccount.consumeReserved(amount, currency);
+        if (!domainResult.isValid()) {
+            return DomainResult.fail(domainResult.getError().code(),
+                  domainResult.getError().message());
         }
 
-        DomainResult r2 = toAccount.credit(amount, currency);
-        if (!r2.isValid()) {
-            return DomainResult.fail(r2.getError().code(), r2.getError().message());
+        domainResult = toAccount.credit(amount, currency);
+        if (!domainResult.isValid()) {
+            fromAccount.reserve(amount, currency);
+            return DomainResult.fail(domainResult.getError().code(),
+                  domainResult.getError().message());
         }
 
         this.status = ReservationStatus.FINALIZED;
@@ -180,26 +186,26 @@ public class FundsReservation {
         }
 
         if (current == ReservationStatus.RELEASED) {
-            // idempotent; “upgrade” NORMAL -> CANCELLED if cancel arrives late
             if (requestedReason == ReleaseReason.CANCELLED && this.releaseReason != ReleaseReason.CANCELLED) {
                 this.releaseReason = ReleaseReason.CANCELLED;
             }
             return DomainResult.ok();
         }
 
-        // current == ACTIVE
         if (fromAccount == null) {
             return DomainResult.fail(DomainErrorCode.CURRENCY_MISMATCH, "From account must be provided");
         }
 
-        DomainResult v = fromAccount.validateReleaseReserved(amount, currency);
-        if (!v.isValid()) {
-            return DomainResult.fail(v.getError().code(), v.getError().message());
+        DomainResult domainResult = fromAccount.validateReleaseReserved(amount, currency);
+        if (!domainResult.isValid()) {
+            return DomainResult.fail(domainResult.getError().code(),
+                  domainResult.getError().message());
         }
 
-        DomainResult r = fromAccount.releaseReserved(amount, currency);
-        if (!r.isValid()) {
-            return DomainResult.fail(r.getError().code(), r.getError().message());
+        domainResult = fromAccount.releaseReserved(amount, currency);
+        if (!domainResult.isValid()) {
+            return DomainResult.fail(domainResult.getError().code(),
+                  domainResult.getError().message());
         }
 
         this.status = ReservationStatus.RELEASED;

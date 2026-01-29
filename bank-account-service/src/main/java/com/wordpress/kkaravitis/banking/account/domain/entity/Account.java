@@ -1,5 +1,7 @@
-package com.wordpress.kkaravitis.banking.account.domain;
+package com.wordpress.kkaravitis.banking.account.domain.entity;
 
+import com.wordpress.kkaravitis.banking.account.domain.type.DomainErrorCode;
+import com.wordpress.kkaravitis.banking.account.domain.value.DomainResult;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -34,7 +36,6 @@ public class Account {
     @Version
     private long version;
     
-    // -------- validation helpers (no mutation) --------
 
     public DomainResult validateReserve(BigDecimal amount, String currency) {
         DomainResult domainResult = validateAmountAndCurrency(amount, currency);
@@ -73,8 +74,6 @@ public class Account {
     public DomainResult validateCredit(BigDecimal amount, String currency) {
         return validateAmountAndCurrency(amount, currency);
     }
-
-    // -------- mutating operations --------
 
     public DomainResult reserve(BigDecimal amount, String currency) {
         DomainResult domainResult = validateReserve(amount, currency);
