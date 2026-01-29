@@ -41,6 +41,7 @@ public class AccountService {
     private final FundsReservationRepository reservationRepository;
     private final AbortedTransferRepository abortedTransferRepository;
 
+    @Transactional
     public DomainEvent reserveFunds(ReserveFundsCommand command) {
         UUID transferId = command.getTransferId();
 
@@ -102,6 +103,7 @@ public class AccountService {
         return toDomainEvent(new FundsReservedEvent(transferId, reservationId));
     }
 
+    @Transactional
     public DomainEvent releaseFunds(ReleaseFundsCommand command) {
         UUID transferId = command.getTransferId();
 
@@ -133,6 +135,7 @@ public class AccountService {
         return toDomainEvent(new FundsReleasedEvent(transferId, reservation.getReservationId()));
     }
 
+    @Transactional
     public DomainEvent finalizeTransfer(FinalizeTransferCommand command) {
         UUID transferId = command.getTransferId();
 
