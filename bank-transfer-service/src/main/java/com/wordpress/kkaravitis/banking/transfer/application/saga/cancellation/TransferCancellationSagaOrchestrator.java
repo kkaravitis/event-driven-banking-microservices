@@ -125,8 +125,7 @@ public class TransferCancellationSagaOrchestrator extends SagaOrchestrator<Trans
     @Override
     protected List<BankingEventType> expectedBankingEventTypes() {
         return List.of(AccountEventType.FUNDS_RESERVATION_CANCELLED,
-              AccountEventType.INCIDENT_EVENT,
-              AccountEventType.FUNDS_RESERVATION_CANCELLATION_REJECTED);
+              AccountEventType.INCIDENT_EVENT);
     }
 
     @Override
