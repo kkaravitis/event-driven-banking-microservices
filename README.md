@@ -57,7 +57,7 @@ In order to start a money transfer you can call the REST API as below:
 ```shell script
  
 curl --location 'http://localhost:8080/banking/transfer' \
---header 'X-CUSTOMER-ID: CC-100' \
+--header 'X-CUSTOMER-ID: CC-201' \
 --header 'Content-Type: application/json' \
 --data '{
     "fromAccountId": "ACC-101",
@@ -79,7 +79,7 @@ You can try to cancel the transfer by executing:
 transferId="THE TRANSFER ID VALUE"
 
 curl --location --request POST http://localhost:8080/banking/transfer/${transferId}/cancel \
---header 'X-CUSTOMER-ID: CC-100'
+--header 'X-CUSTOMER-ID: CC-201'
 
 ```
 
