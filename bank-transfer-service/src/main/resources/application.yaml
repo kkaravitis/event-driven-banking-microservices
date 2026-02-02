@@ -5,6 +5,7 @@ app:
       transfer-cancellation-saga-replies-topic: transfer-cancellation-saga-replies
       accounts-service-commands-topic: accounts-service-commands
       anti-fraud-service-commands-topic: anti-fraud-service-commands
+      transfer-incident-alerts-topic: transfer-incident-alerts
 server:
   port: 8080
 

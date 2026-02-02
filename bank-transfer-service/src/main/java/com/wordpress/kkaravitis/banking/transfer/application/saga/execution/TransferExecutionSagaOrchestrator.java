@@ -45,6 +45,7 @@ public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<Transfer
         UUID transferId = UUID.randomUUID();
         Transfer transfer = Transfer.createNew(
               transferId,
+              command.getCustomerId(),
               command.getFromAccountId(),
               command.getToAccountId(),
               command.getAmount(),
@@ -116,6 +117,7 @@ public class TransferExecutionSagaOrchestrator extends SagaOrchestrator<Transfer
               AccountEventType.FUNDS_RELEASED,
               AccountEventType.FUNDS_RELEASE_FAILED_DUE_TO_CANCEL,
               AccountEventType.FUNDS_RESERVATION_FAILED_DUE_TO_CANCEL,
+              AccountEventType.INCIDENT_EVENT,
               AccountEventType.TRANSFER_APPROVAL_FAILED_DUE_TO_CANCEL);
     }
 

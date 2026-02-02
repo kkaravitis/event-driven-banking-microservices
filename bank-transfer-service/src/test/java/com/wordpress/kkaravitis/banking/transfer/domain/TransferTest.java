@@ -111,6 +111,7 @@ class TransferTest {
     private static Transfer newTransfer() {
         return Transfer.createNew(
               UUID.randomUUID(),
+              "customer-id",
               "acc-from",
               "acc-to",
               new BigDecimal("10.00"),

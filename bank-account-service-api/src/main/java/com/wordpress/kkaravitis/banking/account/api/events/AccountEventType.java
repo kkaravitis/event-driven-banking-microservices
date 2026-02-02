@@ -1,5 +1,6 @@
 package com.wordpress.kkaravitis.banking.account.api.events;
 
+import com.wordpress.kkaravitis.banking.account.api.events.incident.AccountServiceIncidentEvent;
 import com.wordpress.kkaravitis.banking.common.BankingEventType;
 import lombok.RequiredArgsConstructor;
 
@@ -14,7 +15,9 @@ public enum AccountEventType implements BankingEventType {
     FUNDS_RESERVED(FundsReservedEvent.class),
     TRANSFER_APPROVAL_FAILED_DUE_TO_CANCEL(TransferApprovalFailedDueToCancelEvent.class),
     TRANSFER_APPROVAL_FAILED(TransferApprovalFailedEvent.class),
-    TRANSFER_FINALIZED(TransferFinalizedEvent.class);
+    TRANSFER_FINALIZED(TransferFinalizedEvent.class),
+    INCIDENT_EVENT(AccountServiceIncidentEvent.class);
+
 
     private final Class<?> payloadType;
 

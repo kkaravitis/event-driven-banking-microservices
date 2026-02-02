@@ -4,6 +4,7 @@ import com.wordpress.kkaravitis.banking.account.api.commands.FinalizeTransferCom
 import com.wordpress.kkaravitis.banking.account.api.events.FundsReservationFailedDueToCancelEvent;
 import com.wordpress.kkaravitis.banking.account.api.events.FundsReservationFailedEvent;
 import com.wordpress.kkaravitis.banking.account.api.events.FundsReservedEvent;
+import com.wordpress.kkaravitis.banking.account.api.events.incident.AccountServiceIncidentEvent;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaParticipantCommand;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaStepResult;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.TransferExecutionSagaData;
@@ -38,6 +39,8 @@ public class FundsReservationNextStepHandler implements TransferExecutionSagaSte
             return rejectTransfer(context);
         } else if (context.getEvent() instanceof FundsReservationFailedDueToCancelEvent) {
             return cancelSaga((TransferExecutionSagaData) context.getSagaData());
+        } else if (context.getEvent() instanceof AccountServiceIncidentEvent) {
+            return failSagaAndSuspendTransfer(context, topics.transferIncidentAlertsTopic());
         } else {
             return Optional.empty();
         }

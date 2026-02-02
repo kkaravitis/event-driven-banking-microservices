@@ -4,6 +4,7 @@ import com.wordpress.kkaravitis.banking.account.api.commands.ReleaseFundsCommand
 import com.wordpress.kkaravitis.banking.account.api.events.TransferApprovalFailedDueToCancelEvent;
 import com.wordpress.kkaravitis.banking.account.api.events.TransferApprovalFailedEvent;
 import com.wordpress.kkaravitis.banking.account.api.events.TransferFinalizedEvent;
+import com.wordpress.kkaravitis.banking.account.api.events.incident.AccountServiceIncidentEvent;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaParticipantCommand;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaStepResult;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.TransferExecutionSagaData;
@@ -43,6 +44,8 @@ public class FinalizationNextStepHandler implements TransferExecutionSagaStepHan
             return releaseFunds(transferExecutionSagaData);
         } else if (event instanceof TransferApprovalFailedDueToCancelEvent) {
             return cancelSaga(transferExecutionSagaData);
+        } else if (context.getEvent() instanceof AccountServiceIncidentEvent) {
+            return failSagaAndSuspendTransfer(context, topics.transferIncidentAlertsTopic());
         } else {
             return Optional.empty();
         }

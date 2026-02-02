@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
@@ -32,6 +33,9 @@ public class Transfer {
     @Id
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
+
+    @Column(name = "customer_id", nullable = false)
+    private String customerId;
 
     @Column(name = "from_account_id", nullable = false)
     private String fromAccountId;
@@ -63,11 +67,13 @@ public class Transfer {
     private Instant updatedAt;
 
     private Transfer(UUID id,
+          String customerId,
           String fromAccountId,
           String toAccountId,
           BigDecimal amount,
           String currency) {
         this.id = id;
+        this.customerId = customerId;
         this.fromAccountId = fromAccountId;
         this.toAccountId = toAccountId;
         this.amount = amount;
@@ -78,11 +84,12 @@ public class Transfer {
     }
 
     public static Transfer createNew(UUID id,
+          String customerId,
           String fromAccountId,
           String toAccountId,
           BigDecimal amount,
           String currency) {
-        return new Transfer(id, fromAccountId, toAccountId, amount, currency);
+        return new Transfer(id, customerId, fromAccountId, toAccountId, amount, currency);
     }
 
     @PreUpdate
@@ -109,7 +116,7 @@ public class Transfer {
             case CANCEL_PENDING, CANCELLED ->
                   transitionError(DomainErrorCode.COMPLETE_TOO_LATE, TransferState.COMPLETION_PENDING);
 
-            case COMPLETED, REJECTED ->
+            case COMPLETED, REJECTED, SUSPENDED ->
                   transitionError(DomainErrorCode.UNEXPECTED_TRANSITION, TransferState.COMPLETION_PENDING);
 
             default -> illegalStateError();
@@ -128,7 +135,7 @@ public class Transfer {
             case CANCELLED, CANCEL_PENDING ->
                   transitionError(DomainErrorCode.COMPLETE_TOO_LATE, TransferState.COMPLETED);
 
-            case REQUESTED, REJECTED ->
+            case REQUESTED, REJECTED, SUSPENDED ->
                   transitionError(DomainErrorCode.UNEXPECTED_TRANSITION, TransferState.COMPLETED);
 
             default -> illegalStateError();
@@ -147,7 +154,7 @@ public class Transfer {
 
             case CANCEL_PENDING, CANCELLED -> transitionError(DomainErrorCode.REJECT_TOO_LATE, TransferState.REJECTED);
 
-            case COMPLETED -> transitionError(DomainErrorCode.UNEXPECTED_TRANSITION, TransferState.REJECTED);
+            case COMPLETED, SUSPENDED -> transitionError(DomainErrorCode.UNEXPECTED_TRANSITION, TransferState.REJECTED);
 
             default -> illegalStateError();
         };
@@ -163,7 +170,7 @@ public class Transfer {
 
             case CANCEL_PENDING -> success();
 
-            case REJECTED, COMPLETED, COMPLETION_PENDING ->
+            case REJECTED, COMPLETED, COMPLETION_PENDING, SUSPENDED ->
                   transitionError(DomainErrorCode.CANCEL_TOO_LATE, TransferState.CANCEL_PENDING);
 
             case CANCELLED ->
@@ -183,11 +190,21 @@ public class Transfer {
 
             case CANCELLED -> success();
 
-            case REQUESTED, REJECTED, COMPLETED, COMPLETION_PENDING ->
+            case REQUESTED, REJECTED, COMPLETED, COMPLETION_PENDING, SUSPENDED ->
                   transitionError(DomainErrorCode.UNEXPECTED_TRANSITION, TransferState.CANCELLED);
 
             default -> illegalStateError();
         };
+    }
+
+    public DomainResult suspend() {
+        if (List.of(TransferState.CANCELLED,
+              TransferState.REJECTED,
+              TransferState.COMPLETED).contains(state)) {
+            return illegalStateError();
+        }
+        state = TransferState.SUSPENDED;
+        return success();
     }
 
     private DomainResult transitionError(DomainErrorCode code, TransferState toState) {

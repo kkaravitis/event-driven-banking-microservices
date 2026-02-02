@@ -100,21 +100,18 @@ public class FundsReservation {
     }
 
     public boolean isCancelled() {
-        return status == ReservationStatus.RELEASED && releaseReason == ReleaseReason.CANCELLED;
+        return status == ReservationStatus.RELEASED
+              && releaseReason == ReleaseReason.CANCELLED;
     }
 
-    /**
-     * ACTIVE -> FINALIZED
-     * FINALIZED -> idempotent ok
-     * RELEASED -> fail
-     */
     public DomainResult finalizeTransfer(Account fromAccount, Account toAccount) {
         ReservationStatus currentStatus = this.status;
 
         if (currentStatus == ReservationStatus.RELEASED) {
             return DomainResult.fail(
                   DomainErrorCode.RESERVATION_RELEASED,
-                  "Cannot finalize reservation %s because it is RELEASED".formatted(reservationId)
+                  "Cannot finalize reservation %s because it is RELEASED"
+                        .formatted(reservationId)
             );
         }
 
@@ -123,7 +120,7 @@ public class FundsReservation {
         }
 
         if (fromAccount == null || toAccount == null) {
-            return DomainResult.fail(DomainErrorCode.CURRENCY_MISMATCH,
+            return DomainResult.fail(DomainErrorCode.INVALID_ACCOUNT,
                   "Accounts must be provided");
         }
 
@@ -157,20 +154,10 @@ public class FundsReservation {
         return DomainResult.ok();
     }
 
-    /**
-     * ACTIVE -> RELEASED(NORMAL)
-     * RELEASED -> idempotent ok (keeps reason)
-     * FINALIZED -> fail
-     */
     public DomainResult release(Account fromAccount) {
         return releaseInternal(fromAccount, ReleaseReason.NORMAL);
     }
 
-    /**
-     * ACTIVE -> RELEASED(CANCELLED)
-     * RELEASED -> idempotent ok (upgrades reason to CANCELLED)
-     * FINALIZED -> fail
-     */
     public DomainResult cancel(Account fromAccount) {
         return releaseInternal(fromAccount, ReleaseReason.CANCELLED);
     }
@@ -181,7 +168,8 @@ public class FundsReservation {
         if (current == ReservationStatus.FINALIZED) {
             return DomainResult.fail(
                   DomainErrorCode.RESERVATION_FINALIZED,
-                  "Cannot release reservation %s because it is FINALIZED".formatted(reservationId)
+                  "Cannot release reservation %s because it is FINALIZED"
+                        .formatted(reservationId)
             );
         }
 
@@ -193,7 +181,9 @@ public class FundsReservation {
         }
 
         if (fromAccount == null) {
-            return DomainResult.fail(DomainErrorCode.CURRENCY_MISMATCH, "From account must be provided");
+            return DomainResult.fail(DomainErrorCode.INVALID_ACCOUNT,
+                  "From account is not provided for funds reservation with id %s and transfer id %s"
+                        .formatted(reservationId, transferId));
         }
 
         DomainResult domainResult = fromAccount.validateReleaseReserved(amount, currency);

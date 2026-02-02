@@ -1,5 +1,7 @@
 package com.wordpress.kkaravitis.banking.transfer.application.saga.execution.step;
 
+import com.wordpress.kkaravitis.banking.account.api.events.AccountEventType;
+import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaParticipantCommand;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaStepHandler;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaStepResult;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.TransferExecutionSagaData;
@@ -31,6 +33,19 @@ public interface TransferExecutionSagaStepHandler extends SagaStepHandler<Transf
     default Optional<SagaStepResult<TransferExecutionSagaStatus>> cancelSaga(TransferExecutionSagaData sagaData) {
         return Optional.of(SagaStepResult.<TransferExecutionSagaStatus>builder()
               .sagaData(sagaData.withStatus(TransferExecutionSagaStatus.CANCELLED_BY_CANCEL_SAGA))
+              .build());
+    }
+
+    default Optional<SagaStepResult<TransferExecutionSagaStatus>> failSagaAndSuspendTransfer(SagaStepHandlerContext<TransferExecutionSagaStatus> context, String alertsTopic) {
+        context.getTransfer().suspend();
+        return Optional.of(SagaStepResult.<TransferExecutionSagaStatus>builder()
+                    .sagaParticipantCommand(SagaParticipantCommand.builder()
+                          .messageType(AccountEventType.INCIDENT_EVENT.name())
+                          .payload(context.getEvent())
+                          .destinationTopic(alertsTopic)
+                          .build())
+              .sagaData(context.getSagaData()
+                    .withStatus(TransferExecutionSagaStatus.FAILED))
               .build());
     }
 
