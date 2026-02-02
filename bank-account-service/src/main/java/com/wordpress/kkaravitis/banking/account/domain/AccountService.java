@@ -7,7 +7,6 @@ import com.wordpress.kkaravitis.banking.account.api.commands.ReserveFundsCommand
 import com.wordpress.kkaravitis.banking.account.api.events.AccountEventType;
 import com.wordpress.kkaravitis.banking.account.api.events.FundsReleaseFailedDueToCancelEvent;
 import com.wordpress.kkaravitis.banking.account.api.events.FundsReleasedEvent;
-import com.wordpress.kkaravitis.banking.account.api.events.FundsReservationCancellationRejectedEvent;
 import com.wordpress.kkaravitis.banking.account.api.events.FundsReservationCancelledEvent;
 import com.wordpress.kkaravitis.banking.account.api.events.FundsReservationFailedDueToCancelEvent;
 import com.wordpress.kkaravitis.banking.account.api.events.FundsReservationFailedEvent;
@@ -28,7 +27,6 @@ import com.wordpress.kkaravitis.banking.account.domain.type.DomainErrorCode;
 import com.wordpress.kkaravitis.banking.account.domain.type.ReservationStatus;
 import com.wordpress.kkaravitis.banking.account.domain.value.DomainEvent;
 import com.wordpress.kkaravitis.banking.account.domain.value.DomainResult;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -50,6 +48,7 @@ public class AccountService {
     private static final String RESERVATION_FROM_ACCOUNT_DOES_NOT_EXIST = "Reservation %s holds a from account with id %s that does not exists in accounts.";
     private static final String RESERVATION_TO_ACCOUNT_DOES_NOT_EXIST = "Reservation %s holds a to account with id %s that does not exists in accounts.";
     private static final String UNSUPPORTED_ACCOUNT_EVENT = "Unsupported Account Event of class : %s";
+    private static final String TRANSFER_FINALIZED_BEFORE_CANCEL="Transfer %s was finalized while cancellation permitted.";
 
     private final AccountRepository accountRepository;
     private final FundsReservationRepository reservationRepository;
@@ -142,7 +141,9 @@ public class AccountService {
             return toDomainEvent(
                   incidentEventFactory.build(AccountServiceIncidentAction.RELEASE_FUNDS,
                         AccountServiceIncidentReason.FROM_ACCOUNT_NOT_FOUND,
-                        FROM_ACCOUNT_NOT_FOUND_ERROR_TEMPLATE.formatted(command.getFromAccountId()),
+                        RESERVATION_FROM_ACCOUNT_DOES_NOT_EXIST
+                              .formatted(fundsReservation.getReservationId(),
+                                    fundsReservation.getFromAccountId()),
                         command)
             );
         }
@@ -260,7 +261,11 @@ public class AccountService {
 
         FundsReservation reservation = opt.get();
         if (reservation.getStatus() == ReservationStatus.FINALIZED) {
-            return toDomainEvent(new FundsReservationCancellationRejectedEvent(transferId));
+            return toDomainEvent(incidentEventFactory.build(AccountServiceIncidentAction.CANCEL_RESERVATION,
+                  AccountServiceIncidentReason.TRANSFER_FINALIZED_BEFORE_CANCEL,
+                  TRANSFER_FINALIZED_BEFORE_CANCEL
+                        .formatted(transferId),
+                  command));
         }
 
         Account from = accountRepository.findById(reservation.getFromAccountId())
@@ -284,7 +289,10 @@ public class AccountService {
         DomainResult domainResult = reservation.cancel(from);
 
         if (!domainResult.isValid()) {
-            return toDomainEvent(new FundsReservationCancellationRejectedEvent(transferId));
+            return toDomainEvent(incidentEventFactory.build(AccountServiceIncidentAction.CANCEL_RESERVATION,
+                  AccountServiceIncidentReason.INVALID_STATE,
+                  domainResult.getError().message(),
+                  command));
         }
 
         return toDomainEvent(new FundsReservationCancelledEvent(transferId));

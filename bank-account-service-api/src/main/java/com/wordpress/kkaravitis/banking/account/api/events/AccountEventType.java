@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 public enum AccountEventType implements BankingEventType {
     FUNDS_RELEASED(FundsReleasedEvent.class),
     FUNDS_RELEASE_FAILED_DUE_TO_CANCEL(FundsReleaseFailedDueToCancelEvent.class),
-    FUNDS_RESERVATION_CANCELLATION_REJECTED(FundsReservationCancellationRejectedEvent.class),
     FUNDS_RESERVATION_CANCELLED(FundsReservationCancelledEvent.class),
     FUNDS_RESERVATION_FAILED_DUE_TO_CANCEL(FundsReservationFailedDueToCancelEvent.class),
     FUNDS_RESERVATION_FAILED(FundsReservationFailedEvent.class),
