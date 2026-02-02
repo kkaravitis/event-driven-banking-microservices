@@ -24,6 +24,9 @@ public class Account {
     @Column(name = "account_id", nullable = false, updatable = false)
     private String accountId;
 
+    @Column(name = "customer_id", nullable = false)
+    private String customerId;
+
     @Column(name = "available_balance", nullable = false)
     private BigDecimal availableBalance;
 
@@ -46,7 +49,8 @@ public class Account {
         if (availableBalance.compareTo(amount) < 0) {
             return DomainResult.fail(
                   DomainErrorCode.INSUFFICIENT_AVAILABLE_FUNDS,
-                  "Insufficient available funds on account %s".formatted(accountId)
+                  "Insufficient available funds on account %s"
+                        .formatted(accountId)
             );
         }
         return DomainResult.ok();
@@ -61,7 +65,8 @@ public class Account {
         if (reservedBalance.compareTo(amount) < 0) {
             return DomainResult.fail(
                   DomainErrorCode.INSUFFICIENT_RESERVED_FUNDS,
-                  "Insufficient reserved funds on account %s".formatted(accountId)
+                  "Insufficient reserved funds on account %s"
+                        .formatted(accountId)
             );
         }
         return DomainResult.ok();
@@ -117,6 +122,10 @@ public class Account {
         return DomainResult.ok();
     }
 
+    public boolean isOwnedBy(String customerId) {
+        return this.customerId != null && this.customerId.equals(customerId);
+    }
+
     private DomainResult validateAmountAndCurrency(BigDecimal amount, String currency) {
         if (amount == null || amount.signum() <= 0) {
             return DomainResult.fail(DomainErrorCode.INVALID_AMOUNT, "Amount must be > 0");
@@ -124,7 +133,8 @@ public class Account {
         if (currency == null || !currency.equals(this.currency)) {
             return DomainResult.fail(
                   DomainErrorCode.CURRENCY_MISMATCH,
-                  "Currency mismatch for account %s (expected %s, got %s)".formatted(accountId, this.currency, currency)
+                  "Currency mismatch for account %s (expected %s, got %s)"
+                        .formatted(accountId, this.currency, currency)
             );
         }
         return DomainResult.ok();

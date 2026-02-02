@@ -7,6 +7,7 @@ public record Topics(
       String transferExecutionSagaRepliesTopic,
       String transferCancellationSagaRepliesTopic,
       String accountsServiceCommandsTopic,
-      String antiFraudServiceCommandsTopic
+      String antiFraudServiceCommandsTopic,
+      String transferIncidentAlertsTopic
 ) {
 }

@@ -5,6 +5,7 @@ public enum TransferState {
     COMPLETION_PENDING,
     COMPLETED,
     REJECTED,
+    SUSPENDED,
     CANCEL_PENDING,
     CANCELLED
 }

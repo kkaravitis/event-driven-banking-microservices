@@ -47,12 +47,19 @@ public class TransferCancellationSagaOrchestrator extends SagaOrchestrator<Trans
         if (storeResult.isEmpty()) {
             return DomainResult.builder()
                   .error(new DomainError(DomainErrorCode.NOT_EXISTING,
-                        String.format("The Transfer entity with id %s was not found during Transfer Cancellation",
-                              command.getTransferId())))
+                        "The Transfer entity with id %s was not found during Transfer Cancellation"
+                              .formatted(command.getTransferId())))
                   .build();
         }
 
         Transfer transfer = storeResult.get();
+        if (!transfer.getCustomerId().equals(command.getCustomerId())) {
+            return DomainResult.builder()
+                  .error(new DomainError(DomainErrorCode.UNAUTHORIZED,
+                        "Transfer %s is not owned by customer %s"
+                              .formatted(transfer.getId(), command.getCustomerId())))
+                  .build();
+        }
 
         DomainResult domainResult = transfer.startCancellation();
         transferStore.save(transfer);
@@ -118,6 +125,7 @@ public class TransferCancellationSagaOrchestrator extends SagaOrchestrator<Trans
     @Override
     protected List<BankingEventType> expectedBankingEventTypes() {
         return List.of(AccountEventType.FUNDS_RESERVATION_CANCELLED,
+              AccountEventType.INCIDENT_EVENT,
               AccountEventType.FUNDS_RESERVATION_CANCELLATION_REJECTED);
     }
 

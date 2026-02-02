@@ -22,11 +22,15 @@ public class AbortedTransfer {
     @Column(name = "transfer_id", nullable = false, updatable = false)
     private UUID transferId;
 
+    @Column(name = "customer_id", nullable = false)
+    private String customerId;
+
     @Column(name = "aborted_at", nullable = false, updatable = false)
     private Instant abortedAt;
 
-    public AbortedTransfer(UUID transferId) {
+    public AbortedTransfer(UUID transferId, String customerId) {
         this.transferId = transferId;
+        this.customerId = customerId;
         this.abortedAt = Instant.now();
     }
 }
