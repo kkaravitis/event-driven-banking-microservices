@@ -9,13 +9,12 @@ import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaParticipan
 import com.wordpress.kkaravitis.banking.transfer.application.saga.SagaStepResult;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.TransferExecutionSagaData;
 import com.wordpress.kkaravitis.banking.transfer.application.saga.execution.TransferExecutionSagaStatus;
-import com.wordpress.kkaravitis.banking.transfer.domain.DomainResult;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainError;
 import com.wordpress.kkaravitis.banking.transfer.domain.DomainErrorCode;
+import com.wordpress.kkaravitis.banking.transfer.domain.DomainResult;
 import com.wordpress.kkaravitis.banking.transfer.infrastructure.kafka.Topics;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;

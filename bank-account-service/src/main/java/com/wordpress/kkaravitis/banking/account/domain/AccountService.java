@@ -239,7 +239,7 @@ public class AccountService {
                       result.getError().message()));
             } else {
                 return toDomainEvent(incidentEventFactory.build(AccountServiceIncidentAction.FINALIZE_TRANSFER,
-                      AccountServiceIncidentReason.TO_ACCOUNT_NOT_FOUND,
+                      AccountServiceIncidentReason.INVALID_STATE,
                       result.getError().message(),
                       command));
             }

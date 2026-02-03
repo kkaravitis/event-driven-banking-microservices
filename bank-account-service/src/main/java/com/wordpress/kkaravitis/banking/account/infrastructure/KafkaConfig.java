@@ -19,7 +19,7 @@ import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
-import org.springframework.util.backoff.FixedBackOff;
+import org.springframework.kafka.support.ExponentialBackOffWithMaxRetries;
 
 @Configuration
 public class KafkaConfig {
@@ -72,13 +72,26 @@ public class KafkaConfig {
 
     @Bean
     public CommonErrorHandler errorHandler(KafkaTemplate<String, String> kafkaTemplate) {
-        DeadLetterPublishingRecoverer recoverer =
-              new DeadLetterPublishingRecoverer(kafkaTemplate, (r, ex) ->
+        DefaultErrorHandler handler = getDefaultErrorHandler(kafkaTemplate);
+
+        handler.addNotRetryableExceptions(
+              IllegalStateException.class
+        );
+
+        return handler;
+    }
+
+    private static DefaultErrorHandler getDefaultErrorHandler(KafkaTemplate<String, String> kafkaTemplate) {
+        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(kafkaTemplate,
+              (r, ex) ->
                     new TopicPartition(r.topic() + "-dlt", r.partition())
               );
 
-        FixedBackOff backOff = new FixedBackOff(0L, 2L);
+        ExponentialBackOffWithMaxRetries backOff = new ExponentialBackOffWithMaxRetries(10);
+        backOff.setInitialInterval(200L);
+        backOff.setMultiplier(2.0);
+        backOff.setMaxInterval(10_000L);
 
-       return new DefaultErrorHandler(recoverer, backOff);
+        return new DefaultErrorHandler(recoverer, backOff);
     }
 }
