@@ -124,29 +124,9 @@ public class FundsReservation {
                   "Accounts must be provided");
         }
 
-        DomainResult domainResult = fromAccount.validateConsumeReserved(amount, currency);
+        DomainResult domainResult = fromAccount.transfer(amount, currency, toAccount);
         if (!domainResult.isValid()) {
-            return DomainResult.fail(domainResult.getError().code(),
-                  domainResult.getError().message());
-        }
-
-        domainResult = toAccount.validateCredit(amount, currency);
-        if (!domainResult.isValid()) {
-            return DomainResult.fail(domainResult.getError().code(),
-                  domainResult.getError().message());
-        }
-
-        domainResult = fromAccount.consumeReserved(amount, currency);
-        if (!domainResult.isValid()) {
-            return DomainResult.fail(domainResult.getError().code(),
-                  domainResult.getError().message());
-        }
-
-        domainResult = toAccount.credit(amount, currency);
-        if (!domainResult.isValid()) {
-            fromAccount.reserve(amount, currency);
-            return DomainResult.fail(domainResult.getError().code(),
-                  domainResult.getError().message());
+            return domainResult;
         }
 
         this.status = ReservationStatus.FINALIZED;
@@ -186,13 +166,7 @@ public class FundsReservation {
                         .formatted(reservationId, transferId));
         }
 
-        DomainResult domainResult = fromAccount.validateReleaseReserved(amount, currency);
-        if (!domainResult.isValid()) {
-            return DomainResult.fail(domainResult.getError().code(),
-                  domainResult.getError().message());
-        }
-
-        domainResult = fromAccount.releaseReserved(amount, currency);
+        DomainResult domainResult = fromAccount.releaseReserved(amount, currency);
         if (!domainResult.isValid()) {
             return DomainResult.fail(domainResult.getError().code(),
                   domainResult.getError().message());

@@ -56,22 +56,6 @@ public class Account {
         return DomainResult.ok();
     }
 
-    public DomainResult validateReleaseReserved(BigDecimal amount, String currency) {
-        DomainResult domainResult = validateAmountAndCurrency(amount, currency);
-        if (!domainResult.isValid()) {
-            return domainResult;
-        }
-
-        if (reservedBalance.compareTo(amount) < 0) {
-            return DomainResult.fail(
-                  DomainErrorCode.INSUFFICIENT_RESERVED_FUNDS,
-                  "Insufficient reserved funds on account %s"
-                        .formatted(accountId)
-            );
-        }
-        return DomainResult.ok();
-    }
-
     public DomainResult validateConsumeReserved(BigDecimal amount, String currency) {
         return validateReleaseReserved(amount, currency);
     }
@@ -102,28 +86,46 @@ public class Account {
         return DomainResult.ok();
     }
 
-    public DomainResult consumeReserved(BigDecimal amount, String currency) {
+    public DomainResult transfer(BigDecimal amount, String currency, Account toAccount) {
         DomainResult domainResult = validateConsumeReserved(amount, currency);
         if (!domainResult.isValid()) {
             return domainResult;
         }
 
-        reservedBalance = reservedBalance.subtract(amount);
-        return DomainResult.ok();
-    }
+        if (toAccount == null) {
+            return DomainResult.fail(DomainErrorCode.INVALID_ACCOUNT,
+                  "To account must be provided");
+        }
 
-    public DomainResult credit(BigDecimal amount, String currency) {
-        DomainResult domainResult = validateCredit(amount, currency);
+        domainResult = toAccount.validateCredit(amount, currency);
         if (!domainResult.isValid()) {
             return domainResult;
         }
 
-        availableBalance = availableBalance.add(amount);
+        reservedBalance = reservedBalance.subtract(amount);
+        toAccount.availableBalance = toAccount.availableBalance.add(amount);
+
         return DomainResult.ok();
     }
 
     public boolean isOwnedBy(String customerId) {
         return this.customerId != null && this.customerId.equals(customerId);
+    }
+
+    private DomainResult validateReleaseReserved(BigDecimal amount, String currency) {
+        DomainResult domainResult = validateAmountAndCurrency(amount, currency);
+        if (!domainResult.isValid()) {
+            return domainResult;
+        }
+
+        if (reservedBalance.compareTo(amount) < 0) {
+            return DomainResult.fail(
+                  DomainErrorCode.INSUFFICIENT_RESERVED_FUNDS,
+                  "Insufficient reserved funds on account %s"
+                        .formatted(accountId)
+            );
+        }
+        return DomainResult.ok();
     }
 
     private DomainResult validateAmountAndCurrency(BigDecimal amount, String currency) {
