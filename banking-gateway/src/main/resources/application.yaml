@@ -1,0 +1,48 @@
+server:
+  port: 8079
+
+spring:
+  application:
+    name: banking-gateway
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://keycloak:8080/realms/banking}
+
+  cloud:
+    gateway:
+      # Keep the external API paths stable and simply forward them to the relevant internal service.
+      # In the security episode, the gateway will validate the user token and exchange it for an internal token
+      # before calling the downstream services.
+      routes:
+        - id: transfer-service
+          uri: ${TRANSFER_SERVICE_URL:http://localhost:8080}
+          predicates:
+            - Path=/banking/transfer/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+security:
+  # Audience expected in the USER token when calling the gateway (typically the gateway client id)
+  expected-audience: ${EXPECTED_USER_AUDIENCE:banking-gateway}
+
+keycloak:
+  exchange:
+    # Keycloak token endpoint
+    token-uri: ${KEYCLOAK_TOKEN_URI:http://localhost:8180/realms/banking/protocol/openid-connect/token}
+
+    # Client credentials used by the gateway to perform token exchange
+    client-id: ${KEYCLOAK_EXCHANGE_CLIENT_ID:banking-gateway}
+    client-secret: ${KEYCLOAK_EXCHANGE_CLIENT_SECRET:gateway-secret}
+
+    # Downstream service audience for the exchanged token
+    audience: ${KEYCLOAK_EXCHANGE_AUDIENCE:transfer-service}
+
+    # Optional client scopes to include in the exchanged token (e.g., customerId claim + audience mapper)
+    scope: ${KEYCLOAK_EXCHANGE_SCOPE:customer-id transfer-service-audience}

@@ -80,6 +80,49 @@ services:
     networks:
       - banking-net
 
+  postgres-keycloak:
+    image: postgres:15
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    volumes:
+      - keycloak_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U keycloak" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - banking-net
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.5.2
+    command:
+      - start-dev
+      - --db=postgres
+      - --db-url=jdbc:postgresql://postgres-keycloak:5432/keycloak
+      - --db-username=keycloak
+      - --db-password=keycloak
+      - --features=token-exchange
+      - --import-realm
+    ports:
+      - "8180:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+    depends_on:
+      - postgres-keycloak
+    volumes:
+      - ./config/keycloak:/opt/keycloak/data/import
+    networks:
+      - banking-net
+
   pgadmin:
     image: dpage/pgadmin4
     restart: always
@@ -205,6 +248,8 @@ volumes:
   account_data:
     driver: local
   antifraud_data:
+    driver: local
+  keycloak_data:
     driver: local
   pgadmin_data:
     driver: local

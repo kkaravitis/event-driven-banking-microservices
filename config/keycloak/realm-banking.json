@@ -1,0 +1,89 @@
+{
+  "realm": "banking",
+  "enabled": true,
+  "displayName": "Event-Driven Banking",
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Alice",
+      "lastName": "Tester",
+      "email": "alice@banking.dev",
+      "attributes": {
+        "customerId": [
+          "CC-201"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "alice-password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "transfer_write",
+        "transfer_read"
+      ]
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "transfer_write",
+        "description": "Create/cancel transfers"
+      },
+      {
+        "name": "transfer_read",
+        "description": "Read transfer status"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "banking-gateway",
+      "name": "Banking Gateway",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "gateway-secret",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "fullScopeAllowed": true,
+      "protocolMappers": [
+        {
+          "name": "customerId",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "customerId",
+            "claim.name": "customerId",
+            "jsonType.label": "String",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "multivalued": "false"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "transfer-service",
+      "name": "Transfer Service",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "transfer-secret",
+      "serviceAccountsEnabled": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false
+    }
+  ]
+}
