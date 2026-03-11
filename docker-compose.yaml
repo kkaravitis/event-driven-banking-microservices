@@ -191,7 +191,7 @@ services:
         kafka-topics --bootstrap-server kafka:19092 --create --if-not-exists --topic connect-offsets --partitions 25 --replication-factor 1 --config cleanup.policy=compact || true;
         kafka-topics --bootstrap-server kafka:19092 --create --if-not-exists --topic connect-status --partitions 5 --replication-factor 1 --config cleanup.policy=compact || true;
         
-        for t in transfer-execution-saga-replies transfer-execution-saga-replies-dlt transfer-cancellation-saga-replies transfer-cancellation-saga-replies-dlt accounts-service-commands accounts-service-commands-dlt anti-fraud-service-commands anti-fraud-service-commands-dlt ; do
+        for t in transfer-incident-alerts transfer-execution-saga-replies transfer-execution-saga-replies-dlt transfer-cancellation-saga-replies transfer-cancellation-saga-replies-dlt accounts-service-commands accounts-service-commands-dlt anti-fraud-service-commands anti-fraud-service-commands-dlt ; do
           kafka-topics --bootstrap-server localhost:9092 \
             --create --if-not-exists --topic "$$t" --partitions 1 --replication-factor 1 || true;
         done;
@@ -227,7 +227,7 @@ services:
       OFFSET_STORAGE_TOPIC: "connect-offsets"
       STATUS_STORAGE_TOPIC: "connect-status"
 
-      # Converters for typical JSON payload usage
+
       KEY_CONVERTER: "org.apache.kafka.connect.storage.StringConverter"
       VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       VALUE_CONVERTER_SCHEMAS_ENABLE: "false"

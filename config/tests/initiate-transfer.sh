@@ -1,0 +1,39 @@
+#!/bin/bash
+set -euo pipefail
+
+KC="http://localhost:8180"
+REALM="banking"
+CLIENT_ID="banking-gateway"
+CLIENT_SECRET="$1"
+USER="alice"
+PASS="alice-password"
+
+GATEWAY_BASE="http://localhost:8079"
+
+get_token () {
+  curl -s -X POST "$KC/realms/$REALM/protocol/openid-connect/token" \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -d "grant_type=password" \
+    -d "client_id=$CLIENT_ID" \
+    -d "client_secret=$CLIENT_SECRET" \
+    -d "username=$USER" \
+    -d "password=$PASS" \
+  | jq -r '.access_token'
+}
+
+TOKEN="$(get_token)"
+
+echo $TOKEN
+
+echo "Calling initiate transfer..."
+INITIATE_RESPONSE="$(curl -s -i -X POST "$GATEWAY_BASE/banking/transfer" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fromAccountId":"ACC-101",
+    "toAccountId":"ACC-201",
+    "amount":1,
+    "currency":"EUR"
+  }')"
+
+  echo $INITIATE_RESPONSE

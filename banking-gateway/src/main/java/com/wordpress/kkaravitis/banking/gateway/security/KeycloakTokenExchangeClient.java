@@ -34,6 +34,13 @@ public class KeycloakTokenExchangeClient {
                     .with("audience", keycloakTokenExchangeProperties.audience())
               )
               .retrieve()
+              .onStatus(s -> s.is4xxClientError() || s.is5xxServerError(),
+                    resp -> resp.bodyToMono(String.class)
+                          .defaultIfEmpty("")
+                          .map(body -> new IllegalStateException(
+                                "Token exchange failed: " + resp.statusCode() + " body=" + body
+                          ))
+              )
               .bodyToMono(TokenResponse.class)
               .map(TokenResponse::accessToken);
     }

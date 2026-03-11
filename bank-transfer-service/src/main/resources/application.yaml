@@ -41,6 +41,20 @@ spring:
   kafka:
     bootstrap-servers: localhost:9092
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Host mode:
+          # issuer-uri: http://localhost:8180/realms/banking
+          #
+          # Docker-compose mode:
+          # issuer-uri: http://keycloak:8080/realms/banking
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/banking}
+
+security:
+  expected-audience: ${EXPECTED_AUDIENCE:transfer-service}
+
 management:
   endpoints:
     web:

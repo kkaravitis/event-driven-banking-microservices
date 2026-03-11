@@ -23,7 +23,7 @@ public class TokenExchangeGlobalFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 
         String path = exchange.getRequest().getURI().getPath();
-        if (!path.startsWith("/banking/transfer/")) {
+        if (!path.startsWith("/banking/transfer")) {
             return chain.filter(exchange);
         }
 

@@ -39,18 +39,17 @@ public class SecurityConfig {
         NimbusReactiveJwtDecoder decoder = NimbusReactiveJwtDecoder.withIssuerLocation(issuer).build();
 
         OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer(issuer);
-        OAuth2TokenValidator<Jwt> withAudience = jwt -> {
-            List<String> aud = jwt.getAudience();
-            return (aud != null && aud.contains(expectedAudience))
+        OAuth2TokenValidator<Jwt> withAzp = jwt -> {
+            String azp = jwt.getClaimAsString("azp");
+            return expectedAudience.equals(azp)
                   ? OAuth2TokenValidatorResult.success()
                   : OAuth2TokenValidatorResult.failure(new OAuth2Error(
                         OAuth2ErrorCodes.INVALID_TOKEN,
-                        "Missing required audience: " + expectedAudience,
+                        "Missing/invalid azp. Expected: " + expectedAudience + ", azp: " + azp,
                         null
                   ));
         };
-
-        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(withIssuer, withAudience));
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(withIssuer, withAzp));
         return decoder;
     }
 }
