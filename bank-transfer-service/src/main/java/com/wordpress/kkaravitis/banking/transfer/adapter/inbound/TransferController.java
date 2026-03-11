@@ -11,28 +11,32 @@ import com.wordpress.kkaravitis.banking.transfer.domain.Transfer;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/banking/transfer")
 public class TransferController {
-    private static final String CUSTOMER_ID_HEADER = "X-CUSTOMER-ID";
-
     private final TransferService transferService;
     private final TransferStore transferStore;
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<TransferResponse> initiate(@RequestHeader(CUSTOMER_ID_HEADER) String customerId,
+    public ResponseEntity<TransferResponse> initiate(
+          @AuthenticationPrincipal Jwt jwt,
           @RequestBody InitiateTransferDTO dto) {
+
+        String customerId = requireCustomerId(jwt);
 
         DomainResult domainResult = transferService.startTransfer(InitiateTransferCommand
               .builder()
@@ -55,8 +59,11 @@ public class TransferController {
     }
 
     @PostMapping("/{transferId}/cancel")
-    public ResponseEntity<TransferResponse> cancel(@RequestHeader(CUSTOMER_ID_HEADER) String customerId,
+    public ResponseEntity<TransferResponse> cancel(@AuthenticationPrincipal Jwt jwt,
           @PathVariable String transferId) {
+
+        String customerId = requireCustomerId(jwt);
+
         DomainResult domainResult = transferService.startCancellation(InitiateCancellationCommand
               .builder()
                     .transferId(UUID.fromString(transferId))
@@ -73,11 +80,35 @@ public class TransferController {
     }
 
     @GetMapping(value = "/{transferId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<TransferResponse> getTransfer(@PathVariable String transferId) {
-        Optional<Transfer> transfer = transferStore.load(UUID.fromString(transferId));
-        return transfer.map(value -> ResponseEntity.ok(new TransferResponse(value.getId().toString(),
-              value.getState().name(), null)))
-              .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<TransferResponse> getTransfer(@AuthenticationPrincipal Jwt jwt,
+          @PathVariable String transferId) {
+
+        String customerId = requireCustomerId(jwt);
+        Optional<Transfer> optional = transferStore.load(UUID.fromString(transferId));
+
+        if (optional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Transfer transfer = optional.get();
+
+        if (!transfer.getCustomerId().equals(customerId)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Permission denied");
+        }
+
+        return ResponseEntity.ok(new TransferResponse(transfer.getId().toString(),
+              transfer.getState().name(), null));
+    }
+
+    private static String requireCustomerId(Jwt jwt) {
+        if (jwt == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing JWT principal");
+        }
+        String customerId = jwt.getClaimAsString("customerId");
+        if (customerId == null || customerId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Missing customerId claim");
+        }
+        return customerId;
     }
 
 }

@@ -109,6 +109,7 @@
     </dependencyManagement>
 
     <modules>
+        <module>banking-gateway</module>
         <module>anti-fraud-service</module>
         <module>anti-fraud-service-api</module>
         <module>bank-account-service</module>

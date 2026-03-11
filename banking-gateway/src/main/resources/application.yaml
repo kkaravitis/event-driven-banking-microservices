@@ -1,0 +1,39 @@
+server:
+  port: 8079
+
+spring:
+  application:
+    name: banking-gateway
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/banking}
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: transfer-service
+              uri: ${TRANSFER_SERVICE_URL:http://localhost:8080}
+              predicates:
+                - Path=/banking/transfer/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+security:
+  expected-audience: ${EXPECTED_USER_AUDIENCE:banking-gateway}
+
+keycloak:
+  exchange:
+    token-uri: ${KEYCLOAK_TOKEN_URI:http://localhost:8180/realms/banking/protocol/openid-connect/token}
+    client-id: ${KEYCLOAK_EXCHANGE_CLIENT_ID:banking-gateway}
+    client-secret: ${KEYCLOAK_EXCHANGE_CLIENT_SECRET}
+    audience: ${KEYCLOAK_EXCHANGE_AUDIENCE:transfer-service}
+    scope: ${KEYCLOAK_EXCHANGE_SCOPE:customer-id transfer-service-audience}

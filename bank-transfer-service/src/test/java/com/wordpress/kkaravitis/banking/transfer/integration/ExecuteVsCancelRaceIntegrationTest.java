@@ -43,7 +43,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest(
       properties = {
             "spring.kafka.listener.auto-startup=false",
-            "spring.task.scheduling.enabled=false"
+            "spring.task.scheduling.enabled=false",
+            "security.enabled=false"
       }
 )
 class ExecuteVsCancelRaceIntegrationTest {

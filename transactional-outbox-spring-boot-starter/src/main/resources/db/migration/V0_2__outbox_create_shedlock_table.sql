@@ -1,5 +1,3 @@
--- ShedLock table (only used if you enable scheduled cleanup with ShedLock)
-
 CREATE TABLE IF NOT EXISTS shedlock (
   name        VARCHAR(64)   NOT NULL,
   lock_until  TIMESTAMPTZ   NOT NULL,
